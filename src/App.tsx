@@ -63,10 +63,18 @@ export default function App() {
     setLoading(false);
   };
 
-  const handleAutoFix = () => {
+  const handleAutoFix = async () => {
     if (audit?.safeCodeSnippet) {
-      setCode(audit.safeCodeSnippet);
-      setAudit(null); // Reset audit to encourage re-scanning the fixed code
+      const fixedCode = audit.safeCodeSnippet;
+      setCode(fixedCode);
+      // Immediately trigger a re-audit on the fixed code to show it's now secure
+      setLoading(true);
+      const result = await auditSmartContract(fixedCode);
+      if (result) {
+        setAudit(result);
+        setActiveTab('patch'); // Keep it on patch or switch to vulnerabilities to show they are gone
+      }
+      setLoading(false);
     }
   };
 
@@ -208,55 +216,63 @@ export default function App() {
                       key="vuln" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
                       className="grid gap-4"
                     >
-                      {audit.vulnerabilities.map((v, i) => (
-                        <div key={i} className="glass-card group hover:border-cyber-blue/30 transition-colors">
-                          <div className="flex items-center justify-between mb-4">
-                            <div className="flex items-center gap-3">
-                              <AlertTriangle className={`w-4 h-4 ${v.severity === 'Critical' ? 'text-red-500' : 'text-orange-500'}`} />
-                              <h4 className="font-display font-bold uppercase tracking-tight text-white">{v.title}</h4>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
-                                v.severity === 'Critical' ? 'border-red-500/20 text-red-500 bg-red-500/5' : 'border-cyber-blue/20 text-cyber-blue bg-cyber-blue/5'
-                              }`}>
-                                {v.severity.toUpperCase()}
-                              </span>
-                              <Badge variant="blue">{v.swcId}</Badge>
-                            </div>
-                          </div>
-                          
-                          <div className="space-y-4">
-                            <div className="flex items-center justify-between mb-2">
-                               <div className="px-2 py-1 bg-white/5 border border-white/10 rounded text-[9px] font-mono text-text-dim uppercase tracking-widest">
-                                 Mapping: {v.owaspCategory}
-                               </div>
-                               <button 
-                                 onClick={() => setActiveSimSteps(v.simulationSteps)}
-                                 className="flex items-center gap-2 px-3 py-1 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 rounded-lg text-[9px] font-bold uppercase transition-all"
-                               >
-                                 <PlayCircle className="w-3 h-3" />
-                                 Run Live Shadow-Run
-                               </button>
-                            </div>
-                            <div>
-                              <p className="text-[10px] font-bold uppercase text-cyber-blue mb-1">Attack Vector</p>
-                              <p className="text-xs text-slate-300 leading-relaxed bg-cyber-blue/5 p-3 rounded-lg border border-cyber-blue/10">
-                                {v.attackVector}
-                              </p>
-                            </div>
-                            <div className="grid md:grid-cols-2 gap-4">
-                              <div>
-                                <p className="text-[8px] font-bold uppercase text-text-dim mb-1">Description</p>
-                                <p className="text-[11px] text-text-dim">{v.description}</p>
+                      {audit.vulnerabilities.length > 0 ? (
+                        audit.vulnerabilities.map((v, i) => (
+                          <div key={i} className="glass-card group hover:border-cyber-blue/30 transition-colors">
+                            <div className="flex items-center justify-between mb-4">
+                              <div className="flex items-center gap-3">
+                                <AlertTriangle className={`w-4 h-4 ${v.severity === 'Critical' ? 'text-red-500' : 'text-orange-500'}`} />
+                                <h4 className="font-display font-bold uppercase tracking-tight text-white">{v.title}</h4>
                               </div>
-                              <div>
-                                <p className="text-[8px] font-bold uppercase text-text-dim mb-1">Remediation</p>
-                                <p className="text-[11px] text-text-dim italic">{v.remediation}</p>
+                              <div className="flex items-center gap-2">
+                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
+                                  v.severity === 'Critical' ? 'border-red-500/20 text-red-500 bg-red-500/5' : 'border-cyber-blue/20 text-cyber-blue bg-cyber-blue/5'
+                                }`}>
+                                  {v.severity.toUpperCase()}
+                                </span>
+                                <Badge variant="blue">{v.swcId}</Badge>
                               </div>
                             </div>
+                            
+                            <div className="space-y-4">
+                              <div className="flex items-center justify-between mb-2">
+                                 <div className="px-2 py-1 bg-white/5 border border-white/10 rounded text-[9px] font-mono text-text-dim uppercase tracking-widest">
+                                   Mapping: {v.owaspCategory}
+                                 </div>
+                                 <button 
+                                   onClick={() => setActiveSimSteps(v.simulationSteps)}
+                                   className="flex items-center gap-2 px-3 py-1 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 rounded-lg text-[9px] font-bold uppercase transition-all"
+                                 >
+                                   <PlayCircle className="w-3 h-3" />
+                                   Run Live Shadow-Run
+                                 </button>
+                              </div>
+                              <div>
+                                <p className="text-[10px] font-bold uppercase text-cyber-blue mb-1">Attack Vector</p>
+                                <p className="text-xs text-slate-300 leading-relaxed bg-cyber-blue/5 p-3 rounded-lg border border-cyber-blue/10">
+                                  {v.attackVector}
+                                </p>
+                              </div>
+                              <div className="grid md:grid-cols-2 gap-4">
+                                <div>
+                                  <p className="text-[8px] font-bold uppercase text-text-dim mb-1">Description</p>
+                                  <p className="text-[11px] text-text-dim">{v.description}</p>
+                                </div>
+                                <div>
+                                  <p className="text-[8px] font-bold uppercase text-text-dim mb-1">Remediation</p>
+                                  <p className="text-[11px] text-text-dim italic">{v.remediation}</p>
+                                </div>
+                              </div>
+                            </div>
                           </div>
+                        ))
+                      ) : (
+                        <div className="glass-card py-20 flex flex-col items-center justify-center border-green-500/20 bg-green-500/5">
+                          <ShieldCheck className="w-12 h-12 text-green-500 mb-4" />
+                          <h4 className="text-xl font-display font-bold text-white uppercase tracking-tight">System Secure</h4>
+                          <p className="text-sm text-text-dim mt-2">No active vulnerabilities detected in this contract.</p>
                         </div>
-                      ))}
+                      )}
                     </motion.div>
                   )}
 
