@@ -7,7 +7,7 @@ export interface ExploitStep {
   actor: 'User' | 'Attacker' | 'Vault' | 'Contract';
   action: string;
   outcome: string;
-  lineRange: string; // e.g. "12-15"
+  lineRange: string;
   balanceChange?: {
     entity: string;
     amount: string;
@@ -19,48 +19,113 @@ export interface SecurityVulnerability {
   severity: 'Critical' | 'High' | 'Medium' | 'Low';
   title: string;
   description: string;
-  location: string; // e.g. "function withdraw()"
+  location: string;
   remediation: string;
-  attackVector: string; // Detailed explanation of how the attack works
-  exploitPoC: string; // A Solidity or JS snippet showing the exploit
-  owaspCategory: string; // e.g. "SC01: Reentrancy"
-  swcId: string; // e.g. "SWC-107"
-  historicalContext?: string; // Reference to a real hack
-  simulationSteps: ExploitStep[]; // The sequence for the Shadow-Run Engine
+  attackVector: string;
+  exploitPoC: string;
+  owaspCategory: string;
+  swcId: string;
+  historicalContext?: string;
+  historicalExploitName?: string; // New: Specific real-world example
+  simulationSteps: ExploitStep[];
+}
+
+export interface DependencyNode {
+  id: string;
+  type: 'Contract' | 'Library' | 'Interface' | 'External';
+  risk: 'High' | 'Medium' | 'Low' | 'Secure';
+}
+
+export interface DependencyLink {
+  source: string;
+  target: string;
+  relation: 'Inherits' | 'Calls' | 'Uses';
+}
+
+export interface FuzzingScenario {
+  name: string;
+  description: string;
+  attackInput: string;
+  outcome: 'Success' | 'Fail';
+  gasUsed: number;
+  vulnerabilityTargeted: string;
+}
+
+export interface ThreatMetric {
+  timestamp: string;
+  event: string;
+  severity: 'Low' | 'Medium' | 'High' | 'Critical';
+}
+
+export interface ContractFile {
+  name: string;
+  content: string;
 }
 
 export interface ContractAudit {
   contractName: string;
-  riskScore: number; // 0-100 (100 is most dangerous)
+  riskScore: number;
   vulnerabilities: SecurityVulnerability[];
   architectureReview: string;
   gasOptimizationTips: string[];
-  safeCodeSnippet: string; // A hardened version of detected weak logic
+  safeCodeSnippet: string;
+  dependencyGraph: {
+    nodes: DependencyNode[];
+    links: DependencyLink[];
+  };
+  fuzzingSimulation: FuzzingScenario[];
+  threatMonitoringData: ThreatMetric[];
 }
 
-export async function auditSmartContract(solidityCode: string): Promise<ContractAudit | null> {
+async function fetchWithRetry<T>(fn: () => Promise<T>, maxRetries = 3, initialDelay = 1000): Promise<T> {
+  let lastError: any;
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      return await fn();
+    } catch (error: any) {
+      lastError = error;
+      const isQuotaError = error?.message?.includes('429') || error?.status === 'RESOURCE_EXHAUSTED' || error?.code === 429;
+      
+      if (isQuotaError && i < maxRetries - 1) {
+        const delay = initialDelay * Math.pow(2, i);
+        console.warn(`Gemini API Quota Exceeded. Retrying in ${delay}ms... (Attempt ${i + 1}/${maxRetries})`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue;
+      }
+      throw error;
+    }
+  }
+  throw lastError;
+}
+
+export async function auditSmartContract(files: ContractFile | string): Promise<ContractAudit | null> {
+  const codeContent = typeof files === 'string' ? files : files.content;
+  
   const prompt = `You are Rexy, an elite Smart Contract Security Architect. Execute a MISSION-CRITICAL audit of this Solidity code:
   
-  "${solidityCode}"
+  "${codeContent}"
   
-  TASK 1: VULNERABILITY MAPPING
-  Identify every logical flaw, reentrancy bug, overflow, and access control issue. For EVERY finding, generate a 'Shadow-Run' simulation.
+  TASK 1: VULNERABILITY MAPPING & HISTORICAL GROUNDING
+  Identify logical flaws. Map them to real-world historical exploits (e.g., "The DAO Hack", "Poly Network", "Ronin Bridge").
   
-  TASK 2: ABSOLUTE HARDENING (CRITICAL)
-  Generate a 'safeCodeSnippet' that is a COMPREHENSIVE REPLACEMENT for the entire file. 
-  - It MUST include all necessary OpenZeppelin imports (like ReentrancyGuard, Ownable) if required.
-  - It MUST implement the Checks-Effects-Interactions pattern.
-  - It MUST be 100% complete and valid Solidity.
-  - If a re-audit is performed on this specific 'safeCodeSnippet', the 'vulnerabilities' array MUST be empty and the 'riskScore' MUST be 0.
+  TASK 2: DEPENDENCY MAPPING
+  Identify contract relationships, inheritance, and external calls for a dependency graph.
   
-  Do not explain the changes inside the code snippet, just provide the raw Solidity.`;
+  TASK 3: DYNAMIC FUZZING SIMULATION
+  Create 3-5 fuzzing scenarios where random inputs are used to attempt to break the contract logic.
+  
+  TASK 4: THREAT MONITORING DATA
+  Generate 5-10 baseline monitoring events that would help detect post-deployment anomalies.
+  
+  TASK 5: ABSOLUTE HARDENING
+  Generate a 'safeCodeSnippet' that is a COMPREHENSIVE REPLACEMENT for the original file.`;
 
   try {
-    const response = await ai.models.generateContent({
+    const response = await fetchWithRetry(() => ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: prompt,
       config: {
-        systemInstruction: "You are Rexy, an AI security auditor following the OWASP Smart Contract Security Testing Guide. You provide high-precision security audits. You identify specific line logic errors, explain attack vectors, generate exploit PoCs, and cross-reference findings with OWASP SC Top 10 Categories and SWC IDs. Your 'safeCodeSnippet' MUST be the full, complete contract with all vulnerabilities resolved.",
+        systemInstruction: "You are Rexy, a super-intelligent AI security auditor. You provide high-precision security audits, including dependency graphs, fuzzing simulations, and historical hack references. Your 'safeCodeSnippet' MUST be the full, complete contract with all vulnerabilities resolved.",
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
@@ -82,6 +147,7 @@ export async function auditSmartContract(solidityCode: string): Promise<Contract
                   owaspCategory: { type: Type.STRING },
                   swcId: { type: Type.STRING },
                   historicalContext: { type: Type.STRING },
+                  historicalExploitName: { type: Type.STRING },
                   simulationSteps: {
                     type: Type.ARRAY,
                     items: {
@@ -111,18 +177,99 @@ export async function auditSmartContract(solidityCode: string): Promise<Contract
             },
             architectureReview: { type: Type.STRING },
             gasOptimizationTips: { type: Type.ARRAY, items: { type: Type.STRING } },
-            safeCodeSnippet: { type: Type.STRING, description: "THE COMPLETE FULL CONTRACT CODE with all vulnerabilities fixed." }
+            safeCodeSnippet: { type: Type.STRING },
+            dependencyGraph: {
+              type: Type.OBJECT,
+              properties: {
+                nodes: {
+                  type: Type.ARRAY,
+                  items: {
+                    type: Type.OBJECT,
+                    properties: {
+                      id: { type: Type.STRING },
+                      type: { type: Type.STRING, enum: ['Contract', 'Library', 'Interface', 'External'] },
+                      risk: { type: Type.STRING, enum: ['High', 'Medium', 'Low', 'Secure'] }
+                    },
+                    required: ["id", "type", "risk"]
+                  }
+                },
+                links: {
+                  type: Type.ARRAY,
+                  items: {
+                    type: Type.OBJECT,
+                    properties: {
+                      source: { type: Type.STRING },
+                      target: { type: Type.STRING },
+                      relation: { type: Type.STRING, enum: ['Inherits', 'Calls', 'Uses'] }
+                    },
+                    required: ["source", "target", "relation"]
+                  }
+                }
+              },
+              required: ["nodes", "links"]
+            },
+            fuzzingSimulation: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  name: { type: Type.STRING },
+                  description: { type: Type.STRING },
+                  attackInput: { type: Type.STRING },
+                  outcome: { type: Type.STRING, enum: ['Success', 'Fail'] },
+                  gasUsed: { type: Type.NUMBER },
+                  vulnerabilityTargeted: { type: Type.STRING }
+                },
+                required: ["name", "description", "attackInput", "outcome", "gasUsed", "vulnerabilityTargeted"]
+              }
+            },
+            threatMonitoringData: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  timestamp: { type: Type.STRING },
+                  event: { type: Type.STRING },
+                  severity: { type: Type.STRING, enum: ['Low', 'Medium', 'High', 'Critical'] }
+                },
+                required: ["timestamp", "event", "severity"]
+              }
+            }
           },
-          required: ["contractName", "riskScore", "vulnerabilities", "architectureReview", "gasOptimizationTips", "safeCodeSnippet"]
+          required: ["contractName", "riskScore", "vulnerabilities", "architectureReview", "gasOptimizationTips", "safeCodeSnippet", "dependencyGraph", "fuzzingSimulation", "threatMonitoringData"]
         }
       }
-    });
+    }));
 
     const text = response.text;
     if (!text) return null;
     return JSON.parse(text);
-  } catch (error) {
-    console.error("Error auditing contract:", error);
+  } catch (error: any) {
+    if (error?.message?.includes('429') || error?.status === 'RESOURCE_EXHAUSTED') {
+      console.error("Gemini Quota Exhausted: Please check your Google Cloud billing or wait a few minutes.");
+    } else {
+      console.error("Error auditing contract:", error);
+    }
     return null;
   }
+}
+
+export async function chatWithRexy(message: string, context: { code: string; audit: ContractAudit | null }, history: { role: 'user' | 'model'; parts: { text: string }[] }[]) {
+  const result = await fetchWithRetry(() => {
+    const chat = ai.chats.create({
+      model: "gemini-3-flash-preview",
+      config: {
+        systemInstruction: `You are Rexy, the AI Smart Contract Security Partner. You are helpful, technical, and alert.
+        Context:
+        Current Code: ${context.code}
+        Current Audit Status: ${context.audit ? JSON.stringify({ risk: context.audit.riskScore, vulcanCount: context.audit.vulnerabilities.length }) : "Not Audited"}
+        
+        Always provide technical answers. If the user asks for a fix, guide them or explain why a fix was made in Rexy's patches.`,
+      },
+      history: history as any,
+    });
+    return chat.sendMessage({ message });
+  });
+
+  return result.text;
 }

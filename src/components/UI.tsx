@@ -3,7 +3,7 @@ import { Shield, LucideIcon } from 'lucide-react';
 import { motion } from 'motion/react';
 
 interface CardProps {
-  title: string;
+  title?: string;
   icon?: LucideIcon;
   children: React.ReactNode;
   className?: string;
