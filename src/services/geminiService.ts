@@ -1,3 +1,15 @@
+/**
+ * RexAudit: AI-Powered Smart Contract Security Engine
+ * 
+ * Core service for interacting with the Gemini API to perform
+ * deep-scan security audits on blockchain source code.
+ * 
+ * Includes logic for:
+ * - Controlled prompt orchestration
+ * - Response schema validation
+ * - Fallback simulation for offline/demo modes
+ */
+
 import { GoogleGenAI, Type, ThinkingLevel } from "@google/genai";
 import { ContractAudit, Severity } from "../types";
 
@@ -52,6 +64,8 @@ export async function auditSmartContract(files: ContractFile[] | string): Promis
   4. Severity & Confidence: Assign Critical, High, Medium, Low severities. Assign a confidence score (0-100) for each finding.
   5. Security Score: Rate the overall contract from 0 (Compromised) to 100 (Secure).
   6. Final Verdict: Decide if it is "Safe to Deploy" or "Needs Fixes".
+  7. Gas Analysis: Calculate a Gas Efficiency Score (0-100) and provide specific optimization suggestions.
+  8. Heatmap Mapping: Map risk levels (high, medium, low) and scores (0-100) to critical lines for a visual heatmap.
 
   REQUIRED JSON STRUCTURE:
   {
@@ -161,6 +175,19 @@ export async function auditSmartContract(files: ContractFile[] | string): Promis
                 }
               }
             },
+            gasEfficiencyScore: { type: Type.NUMBER },
+            gasOptimizations: { type: Type.ARRAY, items: { type: Type.STRING } },
+            heatmapData: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  line: { type: Type.NUMBER },
+                  risk: { type: Type.STRING },
+                  score: { type: Type.NUMBER }
+                }
+              }
+            },
             threatMonitoringData: {
               type: Type.ARRAY,
               items: {
@@ -259,6 +286,18 @@ export function generateSimulationResult(files: ContractFile[]): ContractAudit {
     safeCodeSnippet: "// Patch V4.1 - Secure Checks-Effects-Interactions\nfunction withdraw(uint amount) public {\n    uint bal = balances[msg.sender];\n    require(bal >= amount, \"Insufficient funds\");\n    \n    // 1. Effect: Update balance BEFORE transfer\n    balances[msg.sender] -= amount;\n    \n    // 2. Interaction: Transfer funds\n    (bool sent, ) = msg.sender.call{value: amount}(\"\");\n    require(sent, \"Transfer failed\");\n}",
     finalVerdict: "Needs Fixes",
     architectureReview: "The architecture follows a standard vault pattern but lacks defensive depth. Modern smart contracts should utilize a multi-layered defense strategy, including modular reentrancy guards and rate-limiting on large withdrawals. The current implementation relies on single-factor auth which is suboptimal for high-value protocols.",
+    gasEfficiencyScore: 78,
+    gasOptimizations: [
+      "Use 'unchecked' for arithmetic that cannot overflow to save gas.",
+      "Replace 'public' visibility with 'external' for read-only functions.",
+      "Pack storage variables by ordering types (e.g., uint128 next to uint128)."
+    ],
+    heatmapData: [
+      { line: 42, risk: 'low', score: 20 },
+      { line: 88, risk: 'high', score: 95 },
+      { line: 92, risk: 'high', score: 90 },
+      { line: 120, risk: 'medium', score: 45 }
+    ],
     dependencyGraph: {
       nodes: [
         { id: "Owner", type: "User", risk: "Low" },

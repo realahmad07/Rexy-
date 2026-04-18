@@ -76,4 +76,11 @@ export interface ContractAudit {
   logicFlow: LogicFlowStep[];
   finalVerdict: string;
   architectureReview: string;
+  gasEfficiencyScore: number;
+  gasOptimizations: string[];
+  heatmapData: {
+    line: number;
+    risk: 'high' | 'medium' | 'low';
+    score: number;
+  }[];
 }

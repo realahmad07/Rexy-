@@ -153,84 +153,85 @@ export function AnalysisDashboard({ audit, onAutoFix, onExport, onShare, onManua
         <div className="space-y-12 pb-32 print:hidden">
           {/* A. Summary Dashboard */}
           <section className="grid grid-cols-1 xl:grid-cols-4 gap-6">
-        <GlassCard className="xl:col-span-2 p-10 flex flex-col md:flex-row items-center gap-12 bg-linear-to-br from-cyber-blue/[0.03] to-transparent">
-          <ScoreIndicator 
-            label="Security Score" 
-            value={audit.securityScore} 
-            color={audit.securityScore < 70 ? "#ef4444" : "#00e5ff"} 
-            size="lg" 
-          />
-          <div className="flex-1 space-y-6">
-            <div className="space-y-1">
-              <h2 className="text-4xl font-display font-black uppercase text-white tracking-tighter">
-                {audit.finalVerdict}
-              </h2>
-              <div className="flex items-center gap-3">
-                 <Badge variant={audit.riskLevel === 'Low' ? 'green' : audit.riskLevel === 'Critical' ? 'purple' : 'blue'}>
-                   {audit.riskLevel} Overall Risk
-                 </Badge>
-                 <span className="text-[10px] font-mono text-text-dim uppercase tracking-widest">
-                   {audit.language} // {audit.framework}
-                 </span>
+            <GlassCard className="xl:col-span-3 p-8 flex flex-col xl:flex-row items-center gap-10 bg-linear-to-br from-cyber-blue/[0.03] to-transparent">
+              <div className="flex gap-10 shrink-0">
+                <ScoreIndicator 
+                  label="Security Index" 
+                  value={audit.securityScore} 
+                  color={audit.securityScore < 70 ? "#ef4444" : "#00e5ff"} 
+                  size="lg" 
+                />
+                <ScoreIndicator 
+                  label="Gas Efficiency" 
+                  value={audit.gasEfficiencyScore || 0} 
+                  color="#8b5cf6" 
+                  size="lg" 
+                />
               </div>
-            </div>
-            <p className="text-xs text-text-dim leading-relaxed font-medium">
-               {audit.summary}
-            </p>
-            <div className="flex gap-4 pt-2">
-               <button 
-                  onClick={() => onExport('pdf')}
-                  className="px-5 py-2.5 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all flex items-center gap-2"
-               >
-                  <Download className="w-3.5 h-3.5" /> PDF
-               </button>
-               <button 
-                  onClick={onSamplePDF}
-                  className="px-5 py-2.5 bg-cyber-blue/20 border border-cyber-blue/30 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-cyber-blue/30 transition-all flex items-center gap-2 text-cyber-blue"
-                  title="Generate Sample PDF"
-               >
-                  <Sparkles className="w-3.5 h-3.5" /> Sample
-               </button>
-               <button 
-                  onClick={() => onExport('json')}
-                  className="px-5 py-2.5 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all flex items-center gap-2"
-               >
-                  <Code2 className="w-3.5 h-3.5" /> JSON
-               </button>
-            </div>
-          </div>
-        </GlassCard>
+              <div className="flex-1 space-y-6">
+                <div className="space-y-1">
+                  <h2 className="text-4xl font-display font-black uppercase text-white tracking-tighter">
+                    {audit.finalVerdict}
+                  </h2>
+                  <div className="flex flex-wrap items-center gap-3">
+                     <Badge variant={audit.riskLevel === 'Low' ? 'green' : audit.riskLevel === 'Critical' ? 'purple' : 'blue'}>
+                       {audit.riskLevel} Overall Risk
+                     </Badge>
+                     <span className="text-[10px] font-mono text-text-dim uppercase tracking-widest bg-white/5 px-2 py-0.5 rounded border border-white/5">
+                       {audit.language} // {audit.framework}
+                     </span>
+                     <span className="text-[10px] font-mono text-cyber-purple uppercase tracking-widest bg-cyber-purple/10 px-2 py-0.5 rounded border border-cyber-purple/20">
+                       Optimizer v3.1 Active
+                     </span>
+                  </div>
+                </div>
+                <p className="text-xs text-text-dim leading-relaxed font-medium line-clamp-2">
+                   {audit.summary}
+                </p>
+                <div className="flex flex-wrap gap-4 pt-2">
+                   <button 
+                      onClick={() => onExport('pdf')}
+                      className="px-5 py-2.5 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all flex items-center gap-2"
+                   >
+                      <Download className="w-3.5 h-3.5" /> PDF Certificate
+                   </button>
+                   <button 
+                      onClick={onSamplePDF}
+                      className="px-5 py-2.5 bg-cyber-blue/20 border border-cyber-blue/30 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-cyber-blue/30 transition-all flex items-center gap-2 text-cyber-blue"
+                   >
+                      <Sparkles className="w-3.5 h-3.5" /> Registry Trace
+                   </button>
+                </div>
+              </div>
+            </GlassCard>
 
-        <div className="grid grid-cols-2 gap-4">
-           {['Critical', 'High', 'Medium', 'Low'].map(sev => (
-             <GlassCard key={sev} className={`p-6 ${severityBorders[sev]} ${severityBg[sev]}`}>
-                <p className={`text-[10px] font-black uppercase tracking-widest mb-2 ${severityColors[sev]}`}>{sev}</p>
-                <p className="text-4xl font-display font-black text-white">{counts[sev] || 0}</p>
-             </GlassCard>
-           ))}
-        </div>
-
-        <GlassCard className="p-10 flex flex-col justify-center border-cyber-blue/20 bg-cyber-blue/5">
-           <div className="flex items-center gap-2 mb-4">
-              <Activity className="w-4 h-4 text-cyber-blue" />
-              <span className="text-[10px] font-black uppercase tracking-widest text-cyber-blue">Code Stats</span>
-           </div>
-           <div className="space-y-4">
-              <div className="flex justify-between items-end border-b border-white/5 pb-2">
-                 <span className="text-[10px] font-black uppercase text-text-dim">Files</span>
-                 <span className="text-xl font-display font-black text-white">{audit.fileCount}</span>
+            <div className="flex flex-col gap-6">
+              <div className="grid grid-cols-2 gap-4 flex-1">
+                 {['Critical', 'High', 'Medium', 'Low'].map(sev => (
+                   <GlassCard key={sev} className={`p-4 flex flex-col justify-center ${severityBorders[sev]} ${severityBg[sev]}`}>
+                      <p className={`text-[9px] font-black uppercase tracking-widest mb-1 ${severityColors[sev]}`}>{sev}</p>
+                      <p className="text-2xl font-display font-black text-white">{counts[sev] || 0}</p>
+                   </GlassCard>
+                 ))}
               </div>
-              <div className="flex justify-between items-end border-b border-white/5 pb-2">
-                 <span className="text-[10px] font-black uppercase text-text-dim">Lines</span>
-                 <span className="text-xl font-display font-black text-white">{audit.totalLines}</span>
-              </div>
-              <div className="flex justify-between items-end">
-                 <span className="text-[10px] font-black uppercase text-text-dim">Functions</span>
-                 <span className="text-xl font-display font-black text-white">~{Math.floor(audit.totalLines / 25)}</span>
-              </div>
-           </div>
-        </GlassCard>
-      </section>
+              <GlassCard className="p-6 flex flex-col justify-center border-white/10 bg-white/[0.02]">
+                <div className="flex justify-between items-center mb-4">
+                  <span className="text-[10px] font-black uppercase text-text-dim">Code Stats</span>
+                  <Activity className="w-3 h-3 text-text-dim" />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-[9px] uppercase font-bold text-white/30 mb-0.5">Files</p>
+                    <p className="text-lg font-display font-black text-white">{audit.fileCount}</p>
+                  </div>
+                  <div>
+                    <p className="text-[9px] uppercase font-bold text-white/30 mb-0.5">Lines</p>
+                    <p className="text-lg font-display font-black text-white">{audit.totalLines}</p>
+                  </div>
+                </div>
+              </GlassCard>
+            </div>
+          </section>
 
       {/* B. Vulnerability List */}
       <section id="security-findings" className="space-y-8">
@@ -297,63 +298,92 @@ export function AnalysisDashboard({ audit, onAutoFix, onExport, onShare, onManua
          </div>
       </section>
 
-      {/* E. Logic Flow Visualization */}
-      <section className="space-y-8">
-         <div className="flex items-center gap-4">
-            <h3 className="text-2xl font-display font-black uppercase text-white tracking-tighter">Execution Logic</h3>
-            <Badge variant="purple">Advanced Mapping</Badge>
-         </div>
-         <GlassCard className="p-10 bg-black/20 border-white/5">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-               {logicFlow.map((step, idx) => (
-                  <div key={idx} className="relative p-6 bg-white/[0.02] border border-white/5 rounded-2xl flex flex-col gap-4">
-                     <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                           <span className="w-6 h-6 rounded-lg bg-white/5 text-[10px] font-black flex items-center justify-center text-cyber-blue">{idx + 1}</span>
-                           <span className="text-[10px] font-black uppercase tracking-widest text-text-dim">{step.from} → {step.to}</span>
-                        </div>
-                        {step.isRisky && <AlertTriangle className="w-4 h-4 text-red-500 animate-pulse" />}
-                     </div>
-                     <p className="text-lg font-display font-black text-white uppercase tracking-tight">{step.action}</p>
-                     <p className="text-[10px] text-text-dim leading-relaxed">{step.description}</p>
-                     <div className="absolute -right-4 top-1/2 -translate-y-1/2 opacity-10 hidden lg:block">
-                        <ChevronRight className="w-8 h-8" />
-                     </div>
-                  </div>
-               ))}
+      {/* E. Advanced Intelligence Matrix */}
+      <section className="space-y-6">
+         <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+               <h3 className="text-2xl font-display font-black uppercase text-white tracking-tighter">Intelligence Matrix</h3>
+               <Badge variant="purple">Neural V3.1</Badge>
             </div>
-         </GlassCard>
+         </div>
+         
+         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            <GlassCard title="Security Risk Heatmap" icon={Monitor} className="h-[450px]">
+               <div className="flex-1 bg-black/60 rounded-3xl border border-white/5 overflow-y-auto p-6 font-mono text-[11px] relative cyber-grid">
+                  {audit.heatmapData && audit.heatmapData.length > 0 ? (
+                    <div className="space-y-1">
+                      {audit.heatmapData.map((data, i) => (
+                        <div key={i} className="flex items-center gap-4 group/line h-8 px-4 rounded hover:bg-white/5 transition-all">
+                          <span className="w-10 text-white/20 font-bold shrink-0">L.{data.line}</span>
+                          <div className="flex-1 h-3 bg-white/5 rounded-full overflow-hidden flex relative">
+                            <motion.div 
+                              initial={{ width: 0 }}
+                              animate={{ width: `${data.score}%` }}
+                              className={`h-full ${
+                                data.risk === 'high' ? 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]' : 
+                                data.risk === 'medium' ? 'bg-orange-500 shadow-[0_0_10px_rgba(249,115,22,0.5)]' : 
+                                'bg-cyber-blue shadow-[0_0_10px_rgba(0,229,255,0.5)]'
+                              }`}
+                            />
+                          </div>
+                          <span className={`w-20 text-right font-black uppercase text-[9px] ${
+                            data.risk === 'high' ? 'text-red-400' : 
+                            data.risk === 'medium' ? 'text-orange-400' : 
+                            'text-cyber-blue'
+                          }`}>
+                            {data.risk} ({data.score}pt)
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center h-full text-text-dim gap-4 text-center opacity-50">
+                      <Search className="w-8 h-8" />
+                      <p className="max-w-[200px] uppercase text-[9px] font-black tracking-widest leading-loose">
+                        Neural Scan in progress... <br/> generating pixel-mapped vulnerability heat-trace
+                      </p>
+                    </div>
+                  )}
+               </div>
+            </GlassCard>
+
+            <GlassCard title="Architecture Neural Trace" icon={Layers} className="h-[450px]">
+               <div className="flex-1 bg-black/40 rounded-3xl border border-white/5 overflow-hidden">
+                  <DependencyGraph data={dependencyGraph} />
+               </div>
+            </GlassCard>
+         </div>
       </section>
 
-      {/* G. Advanced Visualizations */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-         <section className="space-y-8">
-            <div className="flex items-center gap-4">
-               <Layers className="w-5 h-5 text-cyber-blue" />
-               <h3 className="text-xl font-display font-black uppercase text-white tracking-tight">Dependency Graph</h3>
+      {/* G. Gas & Simulation Blocks */}
+      <section className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+         <GlassCard title="Gas Optimization Protocol" icon={Zap} className="flex-1">
+            <div className="space-y-4">
+               {audit.gasOptimizations && audit.gasOptimizations.length > 0 ? (
+                 audit.gasOptimizations.map((opt, i) => (
+                   <div key={i} className="flex gap-4 p-5 bg-white/5 rounded-[2rem] border border-white/5 group hover:bg-cyber-purple/5 transition-all">
+                      <div className="w-10 h-10 rounded-xl bg-cyber-purple/20 flex items-center justify-center shrink-0 shadow-[0_0_15px_rgba(139,92,246,0.1)]">
+                         <Zap className="w-5 h-5 text-cyber-purple group-hover:scale-110 transition-transform" />
+                      </div>
+                      <div className="space-y-1">
+                         <p className="text-[9px] font-black uppercase text-cyber-purple tracking-widest">Efficiency Patch #{i+1}</p>
+                         <p className="text-[11px] text-text-dim leading-relaxed group-hover:text-white transition-colors font-medium">{opt}</p>
+                      </div>
+                   </div>
+                 ))
+               ) : (
+                 <div className="h-full flex items-center justify-center text-text-dim italic text-xs">
+                    No gas anomalies detected in current block height analysis.
+                 </div>
+               )}
             </div>
-            <GlassCard className="p-0 overflow-hidden bg-black/20">
-               <DependencyGraph data={dependencyGraph} />
-            </GlassCard>
-         </section>
+         </GlassCard>
 
-         <section className="space-y-8">
-            <div className="flex items-center gap-4">
-               <Monitor className="w-5 h-5 text-cyber-purple" />
-               <h3 className="text-xl font-display font-black uppercase text-white tracking-tight">Threat Vectors</h3>
+         <GlassCard title="Neural Simulation Vectors" icon={Terminal} className="flex-1">
+            <div className="flex-1 bg-black/60 rounded-3xl border border-white/5 p-2">
+               <FuzzingSimulation scenarios={fuzzingSimulation} />
             </div>
-            <GlassCard className="p-0 overflow-hidden bg-black/20">
-               <ThreatMonitor metrics={threatMonitoringData} />
-            </GlassCard>
-         </section>
-      </div>
-
-      <section className="space-y-8">
-         <div className="flex items-center gap-4">
-            <Zap className="w-5 h-5 text-yellow-500" />
-            <h3 className="text-xl font-display font-black uppercase text-white tracking-tight">Logic Resilience Tests</h3>
-         </div>
-         <FuzzingSimulation scenarios={fuzzingSimulation} />
+         </GlassCard>
       </section>
 
       {/* F. Final Decisions & Action */}
@@ -442,13 +472,42 @@ export function AnalysisDashboard({ audit, onAutoFix, onExport, onShare, onManua
                      </div>
                   </div>
                </div>
-               <div className="flex flex-col items-center justify-center bg-slate-50 rounded-3xl p-8 border border-slate-100">
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2">Trust Score</p>
-                  <p className="text-6xl font-display font-black text-black">{audit.securityScore}%</p>
-                  <div className={`mt-4 px-4 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${audit.securityScore > 70 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                     {audit.finalVerdict}
+               <div className="grid grid-cols-2 gap-4 bg-slate-50 rounded-3xl p-6 border border-slate-100">
+                  <div className="flex flex-col items-center justify-center border-r border-slate-200">
+                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Security Index</p>
+                     <p className="text-4xl font-display font-black text-black">{audit.securityScore}%</p>
+                  </div>
+                  <div className="flex flex-col items-center justify-center">
+                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Gas Efficiency</p>
+                     <p className="text-4xl font-display font-black text-black">{audit.gasEfficiencyScore || 0}%</p>
+                  </div>
+                  <div className="col-span-2 mt-2 px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest bg-black text-white text-center">
+                     Registry Status: {audit.finalVerdict}
                   </div>
                </div>
+            </div>
+
+            <div className="space-y-3">
+               <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 border-b pb-1">Technical Neural Trace</h4>
+               <div className="flex gap-1 h-8">
+                  {audit.heatmapData && audit.heatmapData.length > 0 ? (
+                    audit.heatmapData.slice(0, 15).map((d, i) => (
+                      <div 
+                        key={i} 
+                        className={`flex-1 rounded-sm ${
+                          d.risk === 'high' ? 'bg-red-500' : 
+                          d.risk === 'medium' ? 'bg-orange-500' : 'bg-blue-400'
+                        }`}
+                        title={`Line ${d.line}: ${d.score}pt`}
+                      />
+                    ))
+                  ) : (
+                    <div className="w-full bg-slate-100 rounded flex items-center justify-center">
+                       <span className="text-[8px] uppercase text-slate-400 font-bold">Bytecode mapping finalized</span>
+                    </div>
+                  )}
+               </div>
+               <p className="text-[9px] text-slate-400 italic">Visual heat-map of vulnerability density across core contract logical sectors.</p>
             </div>
 
             <div className="space-y-3">

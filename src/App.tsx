@@ -1,3 +1,15 @@
+/**
+ * RexAudit Application Framework
+ * 
+ * Orchestrates the end-to-end lifecycle of a neural-automated smart contract audit.
+ * 
+ * Key Pillars:
+ * 1. Data Ingestion: Handles multi-file Drag & Drop for contract packages.
+ * 2. Neural Analysis: Proxies code to the Gemini 3.1 Neural Engine for scanning.
+ * 3. Visualization: Renders results via heatmaps, dependency graphs, and PDF certification.
+ * 4. Remediation: Provides AI-generated patches for identified vulnerabilities.
+ */
+
 import { useState, useEffect, useRef } from 'react';
 import { 
   Shield, 
