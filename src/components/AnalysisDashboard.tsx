@@ -405,9 +405,9 @@ export function AnalysisDashboard({ audit, onAutoFix, onExport, onShare, onManua
     )}
 
       {/* PRINTABLE CERTIFICATE VIEW */}
-      <div className="hidden print:block bg-white text-black p-0 min-h-screen">
-        <div className="border-[16px] border-double border-slate-200 p-12 h-full min-h-[1050px] flex flex-col">
-          <header className="flex justify-between items-start mb-12 border-b-2 border-slate-100 pb-8">
+      <div className="hidden print:block bg-white text-black p-0 h-[297mm] overflow-hidden">
+        <div className="border-[12px] border-double border-slate-200 p-8 h-full flex flex-col justify-between overflow-hidden">
+          <header className="flex justify-between items-start mb-6 border-b-2 border-slate-100 pb-4">
             <div className="flex items-center gap-4">
                <div className="w-16 h-16 bg-black rounded-2xl flex items-center justify-center">
                   <Shield className="w-10 h-10 text-white" />
@@ -423,8 +423,8 @@ export function AnalysisDashboard({ audit, onAutoFix, onExport, onShare, onManua
             </div>
           </header>
 
-          <section className="flex-1 space-y-10">
-            <div className="grid grid-cols-2 gap-12">
+          <section className="flex-1 space-y-6 overflow-hidden">
+            <div className="grid grid-cols-2 gap-8">
                <div className="space-y-4">
                   <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 border-b pb-1">Project Specification</h4>
                   <div className="space-y-2">
@@ -451,43 +451,43 @@ export function AnalysisDashboard({ audit, onAutoFix, onExport, onShare, onManua
                </div>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-3">
                <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 border-b pb-1">Risk Exposure Analysis</h4>
-               <div className="grid grid-cols-2 gap-8">
-                  <div className="space-y-2">
+               <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-1">
                      <p className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Financial Impact</p>
-                     <p className="text-[11px] text-slate-700 leading-relaxed font-medium">
+                     <p className="text-[10px] text-slate-700 leading-relaxed font-medium">
                         {audit.financialRiskSummary || "No critical financial exposure identified during current neural scan."}
                      </p>
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-1">
                      <p className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Logic Breakdown</p>
-                     <p className="text-[11px] text-slate-700 leading-relaxed font-medium">
+                     <p className="text-[10px] text-slate-700 leading-relaxed font-medium">
                         {audit.logicRiskSummary || "Logic flows mapped and verified against standard CEI patterns."}
                      </p>
                   </div>
                </div>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-3">
                <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 border-b pb-1">Neural Simulation Overview</h4>
-               <p className="text-sm text-slate-600 leading-relaxed font-medium">
+               <p className="text-[11px] text-slate-600 leading-relaxed font-medium">
                   The smart contract underwent extensive neural-logic behavioral mapping. This process simulates thousands of edge-case execution flows 
                   to identify reentrancy vulnerabilities, arithmetic overflows, and permission indexing faults. The simulation confirms the current 
                   logic resilience against sophisticated attack vectors targeting decentralized state machines.
                </p>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-3">
                <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 border-b pb-1">Simulation Findings Matrix</h4>
-               <div className="grid grid-cols-1 gap-4">
-                  {fuzzingSimulation.map((sim, i) => (
-                     <div key={i} className="p-4 bg-slate-50 border border-slate-100 rounded-xl">
-                        <div className="flex justify-between items-center mb-1">
-                           <span className="text-[10px] font-black uppercase tracking-tight">{sim.name}</span>
-                           <span className="text-[9px] font-bold text-slate-400">{sim.gasUsed} GAS UNITS</span>
+               <div className="grid grid-cols-1 gap-2">
+                  {fuzzingSimulation.slice(0, 3).map((sim, i) => (
+                     <div key={i} className="p-3 bg-slate-50 border border-slate-100 rounded-lg">
+                        <div className="flex justify-between items-center mb-0.5">
+                           <span className="text-[9px] font-black uppercase tracking-tight">{sim.name}</span>
+                           <span className="text-[8px] font-bold text-slate-400">{sim.gasUsed} GAS</span>
                         </div>
-                        <p className="text-[10px] text-slate-600 uppercase font-medium">Outcome: {sim.outcome}</p>
+                        <p className="text-[9px] text-slate-600 uppercase font-medium">Outcome: {sim.outcome}</p>
                      </div>
                   ))}
                   {fuzzingSimulation.length === 0 && (
@@ -496,19 +496,18 @@ export function AnalysisDashboard({ audit, onAutoFix, onExport, onShare, onManua
                </div>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-2">
                <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 border-b pb-1">Architecture Summary</h4>
-               <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+               <p className="text-[11px] text-slate-700 leading-relaxed whitespace-pre-wrap">
                   {audit.architectureReview || "Standard architecture audit performed. Validates consistent state transition and access control patterns."}
                </p>
-               <p className="text-sm text-slate-600 leading-relaxed mt-4 italic border-l-4 border-slate-200 pl-4 py-2 bg-slate-50">
-                  Disclaimer: This audit is a point-in-time assessment performed by Rexy AI. Neural analysis provides 99.8% pattern recognition 
-                  accuracy but does not replace comprehensive community-led security reviews.
+               <p className="text-[10px] text-slate-600 leading-tight mt-2 italic border-l-2 border-slate-200 pl-3 py-1 bg-slate-50">
+                  Disclaimer: This audit is a point-in-time assessment performed by Rexy AI. Neural analysis provides 99.8% pattern recognition accuracy but does not replace comprehensive reviews.
                </p>
             </div>
           </section>
 
-          <footer className="mt-12 pt-12 border-t-2 border-slate-100 flex justify-between items-end">
+          <footer className="mt-4 pt-4 border-t-2 border-slate-100 flex justify-between items-end">
              <div className="flex items-center gap-6">
                 <div className="w-20 h-20 border-2 border-slate-100 p-2 rounded-xl flex items-center justify-center">
                    <QrCode className="w-full h-full text-slate-300" />

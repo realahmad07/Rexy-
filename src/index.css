@@ -74,6 +74,16 @@
   }
 }
 
+@page {
+  margin: 0;
+  size: auto;
+}
+
+@media print {
+  @page { margin: 0; }
+  body { margin: 1.6cm; }
+}
+
 .markdown-body {
   @apply text-text-dim leading-relaxed space-y-4;
 }

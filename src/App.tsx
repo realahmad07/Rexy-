@@ -183,7 +183,10 @@ export default function App() {
     
     // Small delay to ensure render
     setTimeout(() => {
+      const originalTitle = document.title;
+      document.title = `Sample_Audit_Rexy_AI`;
       window.print();
+      document.title = originalTitle;
       setPrintingSample(false);
     }, 1500);
   };
@@ -394,7 +397,10 @@ export default function App() {
                         setToast("Opening Print Menu... (Choose 'Save as PDF')");
                         // Use a reliable trigger with a small delay for DOM consistency
                         setTimeout(() => {
+                          const originalTitle = document.title;
+                          document.title = `Audit_Report_${audit.name.replace(/\s+/g, '_')}`;
                           window.print();
+                          document.title = originalTitle;
                         }, 800);
                       }
                     }}
