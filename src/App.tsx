@@ -220,19 +220,6 @@ export default function App() {
                     </div>
                   </div>
                 </div>
-
-                {audit && (
-                  <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: "spring" }}>
-                    <button 
-                      onClick={handleAutoFix}
-                      disabled={loading || audit.riskScore === 0}
-                      className="w-full py-8 bg-linear-to-r from-cyber-blue via-[#bc13fe] to-cyber-blue bg-[length:200%_auto] hover:bg-right text-white font-black rounded-[2.5rem] uppercase tracking-[0.4em] text-[13px] active:scale-[0.98] transition-all duration-700 flex items-center justify-center gap-4 shadow-[0_20px_60px_-15px_rgba(0,229,255,0.3)] group"
-                    >
-                      <Wand2 className="w-5 h-5 group-hover:rotate-12 transition-transform" />
-                      Apply Semantic Patch
-                    </button>
-                  </motion.div>
-                )}
               </div>
             </motion.section>
           ) : (
@@ -427,12 +414,12 @@ export default function App() {
                                     0
                                   </p>
                                   <motion.div 
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: 1 }}
-                                    className="absolute -top-10 -right-10"
+                                    initial={{ opacity: 0, scale: 0.5 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    transition={{ delay: 1, type: "spring" }}
+                                    className="absolute -top-4 -right-4"
                                   >
-                                     <ShieldCheck className="w-20 h-20 text-green-400 drop-shadow-[0_0_20px_rgba(74,222,128,0.5)]" />
+                                     <ShieldCheck className="w-16 h-16 text-green-400 drop-shadow-[0_0_20px_rgba(74,222,128,0.5)]" />
                                   </motion.div>
                                </div>
                             </div>
@@ -534,19 +521,19 @@ export default function App() {
                             className="glass-card group hover:border-red-500/40 transition-all duration-500 relative overflow-hidden p-8 md:p-12"
                           >
                              <div className="relative z-10 flex flex-col gap-10">
-                               <div className="flex flex-col md:flex-row md:items-start justify-between gap-8">
-                                 <div className="space-y-4 max-w-2xl">
-                                    <div className="flex flex-wrap gap-3">
-                                       <Badge variant="blue" className="bg-red-500/10 border-red-500/30 text-red-400 px-4">{v.severity}</Badge>
-                                       <Badge variant="purple" className="px-4">{v.swcId}</Badge>
+                               <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-white/5">
+                                 <div className="space-y-4 flex-1">
+                                    <div className="flex flex-wrap gap-2">
+                                       <Badge variant="blue" className="bg-red-500/10 border-red-500/30 text-red-400 px-3 py-0.5 text-[9px]">{v.severity}</Badge>
+                                       <Badge variant="purple" className="px-3 py-0.5 text-[9px]">{v.swcId}</Badge>
                                     </div>
-                                    <h4 className="text-3xl md:text-4xl font-display font-black uppercase text-white group-hover:text-red-400 transition-colors leading-tight">
+                                    <h4 className="text-2xl md:text-3xl font-display font-black uppercase text-white group-hover:text-red-400 transition-colors leading-tight tracking-tight">
                                       {v.title}
                                     </h4>
                                  </div>
-                                 <div className="flex flex-col items-start md:items-end shrink-0 pt-2">
-                                   <p className="text-[9px] font-black text-red-500/60 uppercase tracking-widest mb-1">Impact Radius</p>
-                                   <p className="text-sm font-mono font-bold text-red-400">{v.location}</p>
+                                 <div className="flex flex-col items-start md:items-end shrink-0">
+                                   <p className="text-[8px] font-black text-red-500/60 uppercase tracking-[0.2em] mb-1">Impact Radius</p>
+                                   <p className="text-xs font-mono font-bold text-red-400 bg-red-400/10 px-3 py-1 rounded-md border border-red-400/20">{v.location}</p>
                                  </div>
                                </div>
                                
@@ -730,12 +717,12 @@ export default function App() {
                                   </p>
                                   {audit.riskScore === 0 && (
                                      <motion.div 
-                                      initial={{ opacity: 0, y: 10 }}
-                                      animate={{ opacity: 1, y: 0 }}
-                                      transition={{ delay: 1 }}
-                                      className="absolute -top-10 -right-10"
+                                      initial={{ opacity: 0, scale: 0.5 }}
+                                      animate={{ opacity: 1, scale: 1 }}
+                                      transition={{ delay: 1, type: "spring" }}
+                                      className="absolute -top-4 -right-4"
                                      >
-                                        <ShieldCheck className="w-20 h-20 text-green-400 drop-shadow-[0_0_20px_rgba(74,222,128,0.5)]" />
+                                        <ShieldCheck className="w-16 h-16 text-green-400 drop-shadow-[0_0_20px_rgba(74,222,128,0.5)]" />
                                      </motion.div>
                                   )}
                                </div>
