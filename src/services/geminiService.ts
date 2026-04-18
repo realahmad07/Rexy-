@@ -8,6 +8,10 @@ export interface SecurityVulnerability {
   description: string;
   location: string; // e.g. "function withdraw()"
   remediation: string;
+  attackVector: string; // Detailed explanation of how the attack works
+  exploitPoC: string; // A Solidity or JS snippet showing the exploit
+  owaspCategory: string; // e.g. "SC01: Reentrancy"
+  swcId: string; // e.g. "SWC-107"
   historicalContext?: string; // Reference to a real hack
 }
 
@@ -21,31 +25,31 @@ export interface ContractAudit {
 }
 
 export async function auditSmartContract(solidityCode: string): Promise<ContractAudit | null> {
-  const prompt = `You are a Tier-1 Smart Contract Security Researcher. Perform a deep semantic audit on the following Solidity code:
+  const prompt = `You are Rexy, an elite Smart Contract Security Auditor specializing in OWASP standards. Perform a deep semantic audit on the following Solidity code:
   
   "${solidityCode}"
   
-  Focus on:
-  1. Re-entrancy vulnerabilities.
-  2. Access control flaws (e.g. onlyOwner, centraliation risks).
-  3. Logic errors in state updates.
-  4. Integer overflows/underflows (if pre 0.8.0).
-  5. Front-running and MEV risks.
+  For each vulnerability found, you must provide:
+  1. How the code is attacked (Attack Vector).
+  2. A Proof of Concept (PoC) exploit snippet.
+  3. The official OWASP Smart Contract Top 10 Category (e.g., SC01: Reentrancy).
+  4. The specific SWC ID (Smart Contract Weakness Classification) (e.g., SWC-107).
+  5. A hardened remediation and a complete safe code snippet.
   
-  Return a structured JSON audit report.`;
+  Return a structured JSON report.`;
 
   try {
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: prompt,
       config: {
-        systemInstruction: "You are Sentinel3, an AI security auditor. You provide high-precision security audits for Web3 smart contracts. Your reports are used by developers to prevent critical exploits. You must be thorough, identify specific line logic errors, and provide actionable remediation.",
+        systemInstruction: "You are Rexy, an AI security auditor following the OWASP Smart Contract Security Testing Guide. You provide high-precision security audits. You identify specific line logic errors, explain attack vectors, generate exploit PoCs, and cross-reference findings with OWASP SC Top 10 Categories and SWC IDs to ensure professional auditing standards.",
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
           properties: {
             contractName: { type: Type.STRING },
-            riskScore: { type: Type.NUMBER, description: "Risk index from 0 to 100" },
+            riskScore: { type: Type.NUMBER },
             vulnerabilities: {
               type: Type.ARRAY,
               items: {
@@ -56,14 +60,18 @@ export async function auditSmartContract(solidityCode: string): Promise<Contract
                   description: { type: Type.STRING },
                   location: { type: Type.STRING },
                   remediation: { type: Type.STRING },
+                  attackVector: { type: Type.STRING },
+                  exploitPoC: { type: Type.STRING },
+                  owaspCategory: { type: Type.STRING, description: "Mapping to OWASP Smart Contract Top 10" },
+                  swcId: { type: Type.STRING, description: "Mapping to SWC Weakness Classification" },
                   historicalContext: { type: Type.STRING }
                 },
-                required: ["severity", "title", "description", "location", "remediation"]
+                required: ["severity", "title", "description", "location", "remediation", "attackVector", "exploitPoC", "owaspCategory", "swcId"]
               }
             },
             architectureReview: { type: Type.STRING },
             gasOptimizationTips: { type: Type.ARRAY, items: { type: Type.STRING } },
-            safeCodeSnippet: { type: Type.STRING, description: "Hardened Solidity code snippet fixing the major issue." }
+            safeCodeSnippet: { type: Type.STRING }
           },
           required: ["contractName", "riskScore", "vulnerabilities", "architectureReview", "gasOptimizationTips", "safeCodeSnippet"]
         }

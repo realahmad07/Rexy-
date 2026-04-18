@@ -1,6 +1,6 @@
 {
-  "name": "Sentinel3 Security Suite",
-  "description": "An automated Web3 security intelligence platform that performs deep semantic audits of smart contracts to prevent multi-million dollar exploits.",
+  "name": "Rexy Security Auditor",
+  "description": "An advanced AI-driven smart contract security suite that identifies vulnerabilities, generates exploit PoCs, and provides automated security patches.",
   "requestFramePermissions": [],
   "majorCapabilities": []
 }
