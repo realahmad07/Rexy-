@@ -16,11 +16,13 @@ import {
   Code,
   Wand2,
   Bug,
-  ShieldCheck
+  ShieldCheck,
+  PlayCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { GlassCard, Badge, ScoreIndicator } from './components/UI';
-import { auditSmartContract, ContractAudit } from './services/geminiService';
+import { auditSmartContract, ContractAudit, ExploitStep } from './services/geminiService';
+import { ExploitSimulator } from './components/ExploitSimulator';
 
 const SAMPLE_CODE = `// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
@@ -48,6 +50,7 @@ export default function App() {
   const [audit, setAudit] = useState<ContractAudit | null>(null);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'vulnerabilities' | 'review' | 'patch' | 'poc'>('vulnerabilities');
+  const [activeSimSteps, setActiveSimSteps] = useState<ExploitStep[] | null>(null);
 
   const handleAudit = async () => {
     if (!code.trim() || loading) return;
@@ -223,10 +226,17 @@ export default function App() {
                           </div>
                           
                           <div className="space-y-4">
-                            <div className="flex items-center gap-3 mb-2">
+                            <div className="flex items-center justify-between mb-2">
                                <div className="px-2 py-1 bg-white/5 border border-white/10 rounded text-[9px] font-mono text-text-dim uppercase tracking-widest">
                                  Mapping: {v.owaspCategory}
                                </div>
+                               <button 
+                                 onClick={() => setActiveSimSteps(v.simulationSteps)}
+                                 className="flex items-center gap-2 px-3 py-1 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 rounded-lg text-[9px] font-bold uppercase transition-all"
+                               >
+                                 <PlayCircle className="w-3 h-3" />
+                                 Run Live Shadow-Run
+                               </button>
                             </div>
                             <div>
                               <p className="text-[10px] font-bold uppercase text-cyber-blue mb-1">Attack Vector</p>
@@ -324,6 +334,13 @@ export default function App() {
           <a href="#" className="hover:text-white transition-colors text-cyber-blue">HackerOne Integration</a>
         </div>
       </footer>
+
+      {activeSimSteps && (
+        <ExploitSimulator 
+          steps={activeSimSteps} 
+          onClose={() => setActiveSimSteps(null)} 
+        />
+      )}
     </div>
   );
 }
