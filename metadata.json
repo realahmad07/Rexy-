@@ -1,6 +1,6 @@
 {
-  "name": "Rexy Security Auditor",
-  "description": "An advanced AI-driven smart contract security suite that identifies vulnerabilities, generates exploit PoCs, and provides automated security patches.",
+  "name": "Rexy AI",
+  "description": "Mission-critical AI security architect for smart contracts. Features deep semantic auditing, automated exploit proofs, and instantaneous risk-neutralizing patches in a high-fidelity visual operations center.",
   "requestFramePermissions": [],
   "majorCapabilities": []
 }

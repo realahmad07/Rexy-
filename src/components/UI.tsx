@@ -14,17 +14,18 @@ interface CardProps {
 export function GlassCard({ title, icon: Icon, children, className = "", delay = 0 }: CardProps) {
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.98 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.4, delay }}
-      className={`glass-card ${className}`}
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-100px" }}
+      transition={{ duration: 0.6, delay, ease: [0.16, 1, 0.3, 1] }}
+      className={`glass-card group ${className}`}
     >
-      <div className="accent-glow" />
+      <div className="accent-glow group-hover:opacity-30 transition-opacity duration-500" />
       
       {title && (
-        <div className="flex items-center justify-between mb-4">
-          <p className="card-title">{title}</p>
-          {Icon && <Icon className="w-4 h-4 text-cyber-blue opacity-50" />}
+        <div className="flex items-center justify-between mb-6">
+          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/50 group-hover:text-cyber-blue transition-colors">{title}</p>
+          {Icon && <Icon className="w-4 h-4 text-cyber-blue opacity-30 group-hover:opacity-100 transition-all duration-500" />}
         </div>
       )}
       
@@ -35,50 +36,75 @@ export function GlassCard({ title, icon: Icon, children, className = "", delay =
   );
 }
 
-export function Badge({ children, variant = 'blue' }: { children: React.ReactNode, variant?: 'blue' | 'purple' | 'green' }) {
+export function Badge({ children, variant = 'blue', className = "" }: { children: React.ReactNode, variant?: 'blue' | 'purple' | 'green', className?: string }) {
   const colors = {
-    blue: 'bg-cyber-blue/10 text-cyber-blue border-cyber-blue/30',
-    purple: 'bg-cyber-purple/10 text-cyber-purple border-cyber-purple/30',
-    green: 'bg-green-500/10 text-green-400 border-green-500/30',
+    blue: 'bg-cyber-blue/10 text-cyber-blue border-cyber-blue/30 shadow-[0_0_15px_rgba(0,229,255,0.1)]',
+    purple: 'bg-cyber-purple/10 text-cyber-purple border-cyber-purple/30 shadow-[0_0_15px_rgba(188,19,254,0.1)]',
+    green: 'bg-green-500/10 text-green-400 border-green-500/30 shadow-[0_0_15px_rgba(34,197,94,0.1)]',
   };
   
   return (
-    <span className={`px-2 py-0.5 rounded-full text-[10px] uppercase tracking-wider font-bold border ${colors[variant]}`}>
+    <span className={`px-3 py-1 rounded-full text-[9px] uppercase tracking-widest font-black border backdrop-blur-md ${colors[variant]} ${className}`}>
       {children}
     </span>
   );
 }
 
-export function ScoreIndicator({ label, value, color }: { label: string, value: number, color: string }) {
+export function ScoreIndicator({ label, value, color, size = "md" }: { label: string, value: number, color: string, size?: "sm" | "md" | "lg" }) {
+  const dimensions = {
+    sm: 64,
+    md: 96,
+    lg: 160
+  };
+  
+  const textSize = {
+    sm: "text-xs",
+    md: "text-xl",
+    lg: "text-5xl"
+  };
+
+  const dim = dimensions[size];
+  const center = dim / 2;
+  const strokeWidth = size === "lg" ? 6 : 4;
+  const radius = (dim - strokeWidth * 2) / 2;
+  const circumference = 2 * Math.PI * radius;
+
   return (
-    <div className="flex flex-col items-center">
-      <div className="relative w-12 h-12 flex items-center justify-center">
-        <svg className="w-full h-full -rotate-90">
+    <div className="flex flex-col items-center group">
+      <div className="relative flex items-center justify-center" style={{ width: dim, height: dim }}>
+        <div className="absolute inset-0 bg-white/[0.02] rounded-full blur-xl group-hover:blur-2xl transition-all" />
+        <svg 
+          width={dim} 
+          height={dim} 
+          viewBox={`0 0 ${dim} ${dim}`} 
+          className="-rotate-90"
+        >
           <circle
-            cx="24"
-            cy="24"
-            r="20"
+            cx={center}
+            cy={center}
+            r={radius}
             fill="none"
             stroke="currentColor"
-            strokeWidth="3"
+            strokeWidth={strokeWidth}
             className="text-white/5"
           />
           <motion.circle
-            cx="24"
-            cy="24"
-            r="20"
+            cx={center}
+            cy={center}
+            r={radius}
             fill="none"
             stroke={color}
-            strokeWidth="3"
-            strokeDasharray="125.6"
-            initial={{ strokeDashoffset: 125.6 }}
-            animate={{ strokeDashoffset: 125.6 - (125.6 * value) / 100 }}
-            transition={{ duration: 1, ease: "easeOut" }}
+            strokeWidth={strokeWidth}
+            strokeDasharray={circumference}
+            initial={{ strokeDashoffset: circumference }}
+            animate={{ strokeDashoffset: circumference - (circumference * value) / 100 }}
+            transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
+            style={{ filter: `drop-shadow(0 0 8px ${color})` }}
           />
         </svg>
-        <span className="absolute text-[10px] font-bold">{value}</span>
+        <span className={`absolute ${textSize[size]} font-display font-black tracking-tighter`}>{value}</span>
       </div>
-      <span className="text-[8px] uppercase tracking-widest text-text-dim mt-2 font-bold">{label}</span>
+      <span className="text-[10px] uppercase tracking-widest text-text-dim mt-4 font-black">{label}</span>
     </div>
   );
 }

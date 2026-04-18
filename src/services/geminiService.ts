@@ -39,15 +39,21 @@ export interface ContractAudit {
 }
 
 export async function auditSmartContract(solidityCode: string): Promise<ContractAudit | null> {
-  const prompt = `You are Rexy, an elite Smart Contract Security Auditor specializing in OWASP standards. Perform a deep semantic audit on the following Solidity code:
+  const prompt = `You are Rexy, an elite Smart Contract Security Architect. Execute a MISSION-CRITICAL audit of this Solidity code:
   
   "${solidityCode}"
   
-  For each vulnerability found, you MUST provide a detailed "Shadow-Run" simulation (3-7 steps).
+  TASK 1: VULNERABILITY MAPPING
+  Identify every logical flaw, reentrancy bug, overflow, and access control issue. For EVERY finding, generate a 'Shadow-Run' simulation.
   
-  CRITICAL: Under the 'safeCodeSnippet' field, you MUST provide the ENTIRE Solidity contract file, fully patched and corrected. Do NOT just provide a function. The code must be complete with pragma, imports, and all logic fixed so it returns a Risk Score of 0 when re-audited.
+  TASK 2: ABSOLUTE HARDENING (CRITICAL)
+  Generate a 'safeCodeSnippet' that is a COMPREHENSIVE REPLACEMENT for the entire file. 
+  - It MUST include all necessary OpenZeppelin imports (like ReentrancyGuard, Ownable) if required.
+  - It MUST implement the Checks-Effects-Interactions pattern.
+  - It MUST be 100% complete and valid Solidity.
+  - If a re-audit is performed on this specific 'safeCodeSnippet', the 'vulnerabilities' array MUST be empty and the 'riskScore' MUST be 0.
   
-  Return a structured JSON report mapping to the OWASP Smart Contract Top 10 and SWC IDs.`;
+  Do not explain the changes inside the code snippet, just provide the raw Solidity.`;
 
   try {
     const response = await ai.models.generateContent({
