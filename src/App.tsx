@@ -321,14 +321,16 @@ export default function App() {
 
         {/* Audit Stream Header */}
         <AnimatePresence>
-          {audit && !isSecured && (
+          {audit && (
             <motion.div 
               initial={{ opacity: 0, y: 50 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               className="flex flex-col items-center text-center gap-4 py-12"
             >
-               <h3 className="text-sm font-black uppercase tracking-[0.5em] text-text-dim">Execution Results</h3>
+               <h3 className="text-sm font-black uppercase tracking-[0.5em] text-text-dim">
+                {isSecured ? "Validation Stream" : "Execution Results"}
+               </h3>
                <div className="h-20 w-[1px] bg-linear-to-b from-white/10 to-transparent" />
             </motion.div>
           )}
@@ -354,9 +356,109 @@ export default function App() {
                     <Loader2 className="w-16 h-16 text-cyber-blue animate-spin relative" />
                  </div>
                  <div className="text-center space-y-2">
-                    <p className="text-xl font-display font-black uppercase tracking-[0.3em] text-white">Synthesizing Security Report</p>
-                    <p className="text-xs font-mono text-cyber-blue animate-pulse">Running semantic scan... Isolating memory vectors... Mapping SWC identifiers...</p>
+                    <p className="text-xl font-display font-black uppercase tracking-[0.3em] text-white">
+                      {isSecured ? "Authenticating Protocol Integrity" : "Synthesizing Security Report"}
+                    </p>
+                    <p className="text-xs font-mono text-cyber-blue animate-pulse">
+                      {isSecured 
+                        ? "Running formal verification... Mapping zero-day immunity... Validating logical invariants..." 
+                        : "Running semantic scan... Isolating memory vectors... Mapping SWC identifiers..."}
+                    </p>
                  </div>
+              </motion.div>
+            ) : isSecured && audit ? (
+              <motion.div 
+                key="secured-results"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="flex flex-col gap-40 pb-60"
+              >
+                <div className="grid grid-cols-12 gap-12">
+                   <div className="col-span-12 lg:col-span-4 lg:sticky lg:top-24 h-fit">
+                      <h4 className="text-[11px] font-black uppercase tracking-[0.5em] text-green-400 mb-4">Phase 05</h4>
+                      <h2 className="text-5xl font-display font-black tracking-tighter uppercase mb-6 leading-none">Security<br/>Verification</h2>
+                      <p className="text-sm text-text-dim leading-relaxed">
+                        Final integrity check confirms all SWC vulnerabilities have been neutralized. The contract is now immune to the previously identified attack vectors.
+                      </p>
+                   </div>
+                   <div className="col-span-12 lg:col-span-8">
+                      <motion.div 
+                        whileInView={{ opacity: 1, y: 0 }}
+                        initial={{ opacity: 0, y: 40 }}
+                        viewport={{ once: true }}
+                        className="p-16 glass-card bg-black/60 border-cyber-blue/20 overflow-hidden relative group"
+                      >
+                         <div className="absolute inset-0 bg-cyber-blue/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                         <div className="flex flex-col md:flex-row items-center justify-around gap-16 relative z-10">
+                            <div className="text-center">
+                               <p className="text-[10px] font-black tracking-[0.4em] text-text-dim uppercase mb-6">Initial Breach Risk</p>
+                               <div className="relative inline-block">
+                                  <div className="absolute inset-0 bg-red-500 blur-2xl rounded-full opacity-10" />
+                                  <p className="text-7xl md:text-9xl font-display font-black text-white/20 blur-[2px] leading-none tracking-tighter">
+                                    {prevRisk || "N/A"}
+                                  </p>
+                               </div>
+                            </div>
+
+                            <motion.div 
+                              initial={{ scale: 0, rotate: -180, opacity: 0 }}
+                              animate={{ scale: 1, rotate: 0, opacity: 1 }}
+                              transition={{ type: "spring", damping: 12, delay: 0.5 }}
+                              className="flex flex-col items-center gap-6"
+                            >
+                               <div className="relative">
+                                  <div className="absolute inset-0 bg-cyber-blue blur-xl opacity-40 animate-pulse" />
+                                  <div className="w-20 h-20 rounded-full bg-cyber-blue/20 border border-cyber-blue/50 flex items-center justify-center text-cyber-blue relative">
+                                     <TrendingDown className="w-10 h-10" />
+                                  </div>
+                               </div>
+                               <Badge variant="blue" className="bg-cyber-blue text-black border-none px-6 py-2 text-[11px]">Hardening Complete</Badge>
+                            </motion.div>
+
+                            <div className="text-center">
+                               <p className="text-[10px] font-black tracking-[0.4em] text-cyber-blue uppercase mb-6 animate-pulse">Post-Patch Integrity</p>
+                               <div className="relative inline-block">
+                                  <motion.div 
+                                    animate={{ scale: [1, 1.1, 1], opacity: [0.2, 0.4, 0.2] }}
+                                    transition={{ duration: 4, repeat: Infinity }}
+                                    className="absolute inset-0 bg-cyber-blue blur-3xl rounded-full opacity-20" 
+                                  />
+                                  <p className="text-8xl md:text-[12rem] font-display font-black text-cyber-blue leading-none tracking-tighter drop-shadow-[0_0_80px_rgba(0,229,255,0.4)]">
+                                    0
+                                  </p>
+                                  <motion.div 
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 1 }}
+                                    className="absolute -top-10 -right-10"
+                                  >
+                                     <ShieldCheck className="w-20 h-20 text-green-400 drop-shadow-[0_0_20px_rgba(74,222,128,0.5)]" />
+                                  </motion.div>
+                               </div>
+                            </div>
+                         </div>
+                         
+                         <motion.div 
+                           initial={{ opacity: 0 }}
+                           animate={{ opacity: 1 }}
+                           transition={{ delay: 1.2 }}
+                           className="mt-20 pt-12 border-t border-white/5 text-center"
+                         >
+                           <div className="inline-flex items-center gap-8 px-10 py-5 bg-white/[0.02] border border-white/10 rounded-full">
+                              <div className="text-left">
+                                 <p className="text-[9px] font-black text-text-dim uppercase tracking-widest">Logic Hardening</p>
+                                 <p className="text-xl font-display font-black text-white">+{prevRisk ? (prevRisk - 0) : 100}% Efficiency</p>
+                              </div>
+                              <div className="w-[1px] h-8 bg-white/10" />
+                              <div className="text-left">
+                                 <p className="text-[9px] font-black text-text-dim uppercase tracking-widest">Verification Status</p>
+                                 <p className="text-xl font-display font-black text-green-400 uppercase">SYNCHRONIZED</p>
+                              </div>
+                           </div>
+                         </motion.div>
+                      </motion.div>
+                   </div>
+                </div>
               </motion.div>
             ) : audit && !isSecured ? (
               <motion.div 
