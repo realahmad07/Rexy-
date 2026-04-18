@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import * as d3 from 'd3';
-import { DependencyNode, DependencyLink } from '../services/geminiService';
+import { DependencyNode, DependencyLink } from '../types';
 
 interface Props {
   data: {
@@ -21,8 +21,15 @@ export const DependencyGraph = ({ data }: Props) => {
     const svg = d3.select(svgRef.current);
     svg.selectAll("*").remove();
 
+    // Sanitize data: filter links that reference missing nodes
+    const nodeIds = new Set(data.nodes.map(n => n.id));
+    const validLinks = data.links.filter(l => 
+      nodeIds.has(typeof l.source === 'string' ? l.source : (l.source as any).id) && 
+      nodeIds.has(typeof l.target === 'string' ? l.target : (l.target as any).id)
+    );
+
     const simulation = d3.forceSimulation(data.nodes as any)
-      .force("link", d3.forceLink(data.links).id((d: any) => d.id).distance(100))
+      .force("link", d3.forceLink(validLinks).id((d: any) => d.id).distance(100))
       .force("charge", d3.forceManyBody().strength(-300))
       .force("center", d3.forceCenter(width / 2, height / 2));
 
@@ -30,7 +37,7 @@ export const DependencyGraph = ({ data }: Props) => {
       .attr("stroke", "rgba(255,255,255,0.1)")
       .attr("stroke-width", 2)
       .selectAll("line")
-      .data(data.links)
+      .data(validLinks)
       .join("line");
 
     const node = svg.append("g")

@@ -1,6 +1,6 @@
 import { motion } from 'motion/react';
 import { Bug, Zap, Activity } from 'lucide-react';
-import { FuzzingScenario } from '../services/geminiService';
+import { FuzzingScenario } from '../types';
 
 interface Props {
   scenarios: FuzzingScenario[];

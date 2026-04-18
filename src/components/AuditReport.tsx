@@ -1,5 +1,5 @@
 import { Download, FileText, ExternalLink } from 'lucide-react';
-import { ContractAudit } from '../services/geminiService';
+import { ContractAudit } from '../types';
 
 interface Props {
   audit: ContractAudit;
@@ -41,11 +41,11 @@ export const AuditReport = ({ audit }: Props) => {
           <div className="flex items-center justify-between border-b-2 border-black pb-10 mb-10">
              <div>
                 <h1 className="text-4xl font-black uppercase mb-2">Rexy AI Audit Report</h1>
-                <p className="text-sm font-bold uppercase tracking-widest text-slate-500">{audit.contractName}</p>
+                <p className="text-sm font-bold uppercase tracking-widest text-slate-500">{audit.name}</p>
              </div>
              <div className="text-right">
                 <p className="text-xs font-bold uppercase mb-1">Risk Score</p>
-                <p className="text-5xl font-black">{audit.riskScore}</p>
+                <p className="text-5xl font-black">{audit.securityScore}</p>
              </div>
           </div>
 
@@ -64,7 +64,7 @@ export const AuditReport = ({ audit }: Props) => {
                             <h4 className="font-bold text-lg">{v.title}</h4>
                             <span className="text-xs font-black uppercase bg-slate-100 px-3 py-1 rounded">{v.severity}</span>
                          </div>
-                         <p className="text-[10px] uppercase font-bold text-slate-500 mb-4">{v.swcId} | {v.location}</p>
+                         <p className="text-[10px] uppercase font-bold text-slate-500 mb-4">{v.fileName} | Line: {v.lineNumbers.join(',')}</p>
                          <p className="text-sm mb-4">{v.description}</p>
                          <div className="bg-slate-50 p-4 rounded-xl text-xs font-mono">
                             <p className="font-bold mb-1 uppercase">Remediation:</p>

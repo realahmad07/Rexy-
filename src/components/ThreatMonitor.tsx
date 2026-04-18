@@ -1,5 +1,5 @@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { ThreatMetric } from '../services/geminiService';
+import { ThreatMetric } from '../types';
 import { Shield, Eye, AlertCircle } from 'lucide-react';
 
 interface Props {
@@ -8,7 +8,8 @@ interface Props {
 
 export const ThreatMonitor = ({ metrics }: Props) => {
   // Generate some random chart data based on metrics
-  const chartData = metrics.map((m, i) => ({
+  const safeMetrics = metrics || [];
+  const chartData = safeMetrics.map((m, i) => ({
     name: m.timestamp,
     threatLevel: m.severity === 'Critical' ? 90 : m.severity === 'High' ? 70 : m.severity === 'Medium' ? 40 : 20,
     volume: Math.floor(Math.random() * 100)
@@ -60,7 +61,7 @@ export const ThreatMonitor = ({ metrics }: Props) => {
       </div>
 
       <div className="col-span-12 lg:col-span-4 flex flex-col gap-6">
-         {metrics.slice(0, 4).map((m, i) => (
+         {safeMetrics.slice(0, 4).map((m, i) => (
            <div key={i} className="glass-card p-6 flex flex-row items-center gap-5 border-white/5 hover:border-white/10 transition-all">
               <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${
                 m.severity === 'Critical' ? 'bg-red-500/10' : m.severity === 'High' ? 'bg-orange-500/10' : 'bg-cyber-blue/10'

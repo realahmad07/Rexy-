@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { MessageSquare, Send, X, Loader2, Bot, User } from 'lucide-react';
-import { chatWithRexy, ContractAudit } from '../services/geminiService';
+import { chatWithRexy } from '../services/geminiService';
+import { ContractAudit } from '../types';
 
 interface Props {
   code: string;
@@ -55,9 +56,9 @@ export const SecurityChat = ({ code, audit }: Props) => {
       >
         <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 rounded-full transition-opacity" />
         <MessageSquare className="w-7 h-7 text-white" />
-        {audit && audit.vulnerabilities.length > 0 && (
+        {audit && (audit.vulnerabilities || []).length > 0 && (
            <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full border-2 border-black flex items-center justify-center text-[10px] font-black">
-              {audit.vulnerabilities.length}
+              {(audit.vulnerabilities || []).length}
            </div>
         )}
       </button>

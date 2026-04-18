@@ -3,14 +3,10 @@ import {
   Shield, 
   Cpu, 
   Zap, 
-  Trophy, 
-  Send, 
   Loader2, 
-  ChevronRight,
   Terminal,
   Activity,
   Lock,
-  Eye,
   AlertTriangle,
   History,
   Code,
@@ -18,20 +14,26 @@ import {
   Bug,
   ShieldCheck,
   CheckCircle2,
-  ArrowBigDown,
   TrendingDown,
-  ExternalLink
+  Box,
+  Layout,
+  Layers,
+  Search,
+  CheckCircle,
+  Sparkles,
+  ChevronRight
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { GlassCard, Badge, ScoreIndicator } from './components/UI';
-import { auditSmartContract, ContractAudit } from './services/geminiService';
-import { DependencyGraph } from './components/DependencyGraph';
-import { FuzzingSimulation } from './components/FuzzingSimulation';
-import { ThreatMonitor } from './components/ThreatMonitor';
-import { AuditReport } from './components/AuditReport';
+import { auditSmartContract, generateSimulationResult } from './services/geminiService';
+import { ContractAudit, ContractFile } from './types';
+import { FileSelector } from './components/FileSelector';
+import { AnalysisProgress } from './components/AnalysisProgress';
+import { AnalysisDashboard } from './components/AnalysisDashboard';
 import { SecurityChat } from './components/SecurityChat';
 
-const SAMPLE_CODE = `// SPDX-License-Identifier: MIT
+const SAMPLE_CODE: ContractFile[] = [{
+  name: 'SimpleVault.sol',
+  content: `// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 contract SimpleVault {
@@ -50,91 +52,191 @@ contract SimpleVault {
 
         balances[msg.sender] = 0;
     }
-}`;
+}`
+}];
+
+type AuditStage = 'input' | 'processing' | 'analysis' | 'report';
 
 export default function App() {
-  const [code, setCode] = useState(SAMPLE_CODE);
+  const [stage, setStage] = useState<AuditStage>('input');
+  const [files, setFiles] = useState<ContractFile[]>(SAMPLE_CODE);
   const [audit, setAudit] = useState<ContractAudit | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [prevRisk, setPrevRisk] = useState<number | null>(null);
-  const [isSecured, setIsSecured] = useState(false);
+  const [analysisProgress, setAnalysisProgress] = useState(0);
+  const [analysisStep, setAnalysisStep] = useState('parsing');
+  const [isSimulationMode, setIsSimulationMode] = useState(false);
+  const [appliedFix, setAppliedFix] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+  const [printingSample, setPrintingSample] = useState(false);
   const resultsRef = useRef<HTMLDivElement>(null);
 
-  const handleAudit = async (customCode?: string, resetSecured = true) => {
-    const targetCode = customCode || code;
-    if (!targetCode.trim() || loading) return;
-    
-    setLoading(true);
-    setError(null);
-    if (resetSecured) {
-      setIsSecured(false);
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => setToast(null), 3000);
+      return () => clearTimeout(timer);
     }
-    
-    const result = await auditSmartContract(targetCode);
+  }, [toast]);
+
+  const startAnalysis = async (targetFiles: ContractFile[], isFix = false) => {
+    setStage('analysis');
+    setLoading(true);
+    setAnalysisProgress(0);
+    setAnalysisStep('parsing');
+    setAppliedFix(isFix);
+
+    // Simulate analysis phases
+    const phases = [
+      { step: 'parsing', progress: 25, duration: isSimulationMode ? 500 : 1500 },
+      { step: 'scanning', progress: 50, duration: isSimulationMode ? 500 : 2000 },
+      { step: 'vulnerabilities', progress: 75, duration: isSimulationMode ? 500 : 2000 },
+      { step: 'logic', progress: 90, duration: isSimulationMode ? 500 : 2500 }
+    ];
+
+    for (const phase of phases) {
+      setAnalysisStep(phase.step);
+      setAnalysisProgress(phase.progress);
+      await new Promise(r => setTimeout(r, phase.duration));
+    }
+
+    let result;
+    if (isSimulationMode) {
+      result = generateSimulationResult(targetFiles);
+    } else {
+      result = await auditSmartContract(targetFiles);
+    }
+
     if (result) {
       setAudit(result);
-      if (!customCode) setPrevRisk(null); 
-      
-      setTimeout(() => {
-        resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 100);
+      setAnalysisProgress(100);
+      setTimeout(() => setStage('report'), 500);
     } else {
-      setError("Analysis failed. This usually happens when the Gemini API quota is exceeded. Please wait a few moments and try again.");
+      setError("AI Engine analysis failed. This is usually due to temporary quota limits.");
+      setStage('input');
     }
     setLoading(false);
   };
 
-  const handleAutoFix = async () => {
+  const handleFilesSelected = (selectedFiles: ContractFile[]) => {
+    setFiles(selectedFiles);
+    startAnalysis(selectedFiles);
+  };
+
+  const handleAutoFix = () => {
     if (audit?.safeCodeSnippet) {
-      setPrevRisk(audit.riskScore);
-      const fixedCode = audit.safeCodeSnippet;
-      setCode(fixedCode);
-      setIsSecured(true);
-      handleAudit(fixedCode, false);
+      const fixedFiles: ContractFile[] = [{
+        name: 'Secured_Contract.sol',
+        content: audit.safeCodeSnippet
+      }];
+      setFiles(fixedFiles);
+      startAnalysis(fixedFiles, true);
+      setToast("Neural patch applied successfully!");
     }
   };
 
-  useEffect(() => {
-    handleAudit();
-  }, []);
+  const handleShare = async () => {
+    const shareData = {
+      title: 'REX AI Security Audit',
+      text: `Security Audit Report for ${audit?.name || 'Project'}. Trust Index: ${audit?.securityScore}%`,
+      url: window.location.href
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(window.location.href);
+        setToast("Link copied to clipboard!");
+      }
+    } catch (err) {
+      console.error('Error sharing:', err);
+    }
+  };
+
+  const handleManualReview = () => {
+    const findingsSection = document.getElementById('security-findings');
+    if (findingsSection) {
+      findingsSection.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      // If fixed, scroll to code
+      const codeSection = document.getElementById('secured-code');
+      if (codeSection) {
+        codeSection.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+  };
+
+  const handleSamplePDF = async () => {
+    setLoading(true);
+    // Force simulation for sample
+    const sampleFiles: ContractFile[] = [{ name: 'Sample_Contract.sol', content: '// Sample Code' }];
+    setFiles(sampleFiles);
+    
+    // Quick simulate
+    const result = generateSimulationResult(sampleFiles);
+    setAudit(result);
+    setStage('report');
+    setLoading(false);
+    setPrintingSample(true);
+    
+    setToast("Generating Sample Certificate...");
+    
+    // Small delay to ensure render
+    setTimeout(() => {
+      window.print();
+      setPrintingSample(false);
+    }, 1500);
+  };
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white selection:bg-cyber-blue/30 font-sans">
+    <div className="min-h-screen bg-dark-bg text-slate-200 selection:bg-cyber-blue/30 font-sans">
       {/* Background Elements */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
         <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-cyber-blue/5 blur-[120px] rounded-full" />
-        <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-purple-500/5 blur-[120px] rounded-full" />
+        <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-cyber-purple/5 blur-[120px] rounded-full" />
         <div className="absolute inset-0 cyber-grid opacity-[0.02]" />
       </div>
 
       <div className="relative z-10 flex flex-col h-screen overflow-hidden">
         {/* Compact Header */}
-        <header className="h-20 border-b border-white/5 bg-black/40 backdrop-blur-xl flex items-center justify-between px-8 shrink-0">
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-xl bg-linear-to-br from-cyber-blue to-cyber-purple flex items-center justify-center">
-              <Shield className="w-6 h-6 text-white" />
+        <header className="h-16 border-b border-white/5 bg-black/40 backdrop-blur-xl flex items-center justify-between px-8 shrink-0 print:hidden">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-linear-to-br from-cyber-blue to-cyber-purple flex items-center justify-center">
+              <Shield className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-display font-black tracking-tighter uppercase leading-none">Rexy AI</h1>
-              <p className="text-[10px] font-black text-text-dim uppercase tracking-[0.2em]">Neural Intelligence Security</p>
+              <h1 className="text-lg font-display font-black tracking-tighter uppercase leading-none">Security Auditor</h1>
+              <p className="text-[10px] font-black text-text-dim uppercase tracking-[0.2em]">Enterprise Analysis Pipeline</p>
             </div>
           </div>
 
           <div className="flex items-center gap-8">
-            {audit && (
+            <div className="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-full border border-white/10">
+               <span className="text-[9px] font-black text-white/40 uppercase tracking-widest">Simulation</span>
+               <button 
+                 onClick={() => setIsSimulationMode(!isSimulationMode)}
+                 className={`w-8 h-4 rounded-full relative transition-colors ${isSimulationMode ? 'bg-cyber-blue' : 'bg-white/20'}`}
+               >
+                  <motion.div 
+                    animate={{ x: isSimulationMode ? 16 : 2 }}
+                    className="absolute top-1 w-2 h-2 rounded-full bg-white shadow-sm"
+                  />
+               </button>
+            </div>
+
+            {stage === 'report' && audit && (
               <div className="hidden md:flex items-center gap-6">
                 <div className="flex flex-col items-end">
-                  <span className="text-[9px] font-black text-text-dim uppercase tracking-widest">Protocol Health</span>
+                  <span className="text-[9px] font-black text-text-dim uppercase tracking-widest">Trust Index</span>
                   <div className="flex items-center gap-2">
-                    <span className={`text-sm font-bold ${audit.riskScore > 50 ? 'text-red-400' : 'text-green-400'}`}>
-                      {100 - audit.riskScore}% Secure
+                    <span className={`text-sm font-bold ${audit.securityScore < 70 ? 'text-red-400' : 'text-green-400'}`}>
+                      {audit.securityScore}% Verified
                     </span>
                     <div className="w-24 h-1 bg-white/5 rounded-full overflow-hidden">
                        <motion.div 
                         initial={{ width: 0 }}
-                        animate={{ width: `${100 - audit.riskScore}%` }}
-                        className={`h-full ${audit.riskScore > 50 ? 'bg-red-500' : 'bg-green-500'}`} 
+                        animate={{ width: `${audit.securityScore}%` }}
+                        className={`h-full ${audit.securityScore < 70 ? 'bg-red-500' : 'bg-green-500'}`} 
                        />
                     </div>
                   </div>
@@ -143,349 +245,197 @@ export default function App() {
             )}
             
             <button 
-              onClick={() => handleAudit()}
-              disabled={loading}
-              className="px-6 py-2.5 bg-white text-black text-[11px] font-black uppercase tracking-widest rounded-full hover:bg-cyber-blue transition-all disabled:opacity-50 flex items-center gap-2"
+              onClick={() => {
+                setStage('input');
+                setAppliedFix(false);
+              }}
+              className="px-6 py-2.5 bg-white/5 border border-white/10 text-white text-[10px] font-black uppercase tracking-widest rounded-full hover:bg-white/10 transition-all flex items-center gap-2"
             >
-              {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />}
-              {loading ? 'Analyzing...' : 'Execute Audit'}
+              <History className="w-3 h-3" /> New Audit
             </button>
           </div>
         </header>
 
         {/* Dynamic Body Area */}
-        <main className="flex-1 flex overflow-hidden">
-          {/* Editor Side */}
-          <div className="w-full lg:w-[45%] border-r border-white/5 flex flex-col bg-black/20">
-            <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
-               <div className="flex items-center gap-3">
-                  <Code className="w-4 h-4 text-cyber-blue" />
-                  <span className="text-[10px] font-black uppercase tracking-widest text-white">Smart Contract Terminal</span>
-               </div>
-               <div className="flex gap-2">
-                  <div className="w-2 h-2 rounded-full bg-red-400/20" />
-                  <div className="w-2 h-2 rounded-full bg-orange-400/20" />
-                  <div className="w-2 h-2 rounded-full bg-green-400/20" />
-               </div>
-            </div>
-            
-            <div className="flex-1 relative font-mono text-sm group">
-               <textarea 
-                 value={code}
-                 onChange={(e) => setCode(e.target.value)}
-                 className="absolute inset-0 w-full h-full bg-transparent p-10 resize-none focus:outline-none text-blue-100/70 leading-relaxed scrollbar-hide selection:bg-cyber-blue/30"
-                 placeholder="Paste Solidity code here..."
-               />
-               {!code && (
-                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20">
-                   <Terminal className="w-12 h-12" />
-                 </div>
-               )}
-            </div>
+        <main className="flex-1 overflow-y-auto scroll-smooth scrollbar-hide bg-dark-bg" ref={resultsRef}>
+          {/* Step-by-Step Guide Horizontal Bar */}
+          <div className="bg-white/[0.02] border-b border-white/5 py-3 px-8 hidden md:flex items-center justify-center gap-12 font-mono text-[9px] uppercase tracking-[0.2em] text-text-dim">
+            {[
+              { s: 'input', l: 'Source Input' },
+              { s: 'analysis', l: 'Engine Scan' },
+              { s: 'report', l: 'Final Verdict' }
+            ].map((step, idx) => (
+              <div key={idx} className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <span className={`w-5 h-5 rounded-full border flex items-center justify-center ${stage === step.s ? 'border-cyber-blue text-cyber-blue' : 'border-white/20'}`}>
+                    {idx + 1}
+                  </span>
+                  <span className={stage === step.s ? 'text-white' : ''}>{step.l}</span>
+                </div>
+                {idx < 2 && <div className="w-8 h-px bg-white/10" />}
+              </div>
+            ))}
           </div>
 
-          {/* Results Side */}
-          <div className="flex-1 flex flex-col bg-[#080808] overflow-hidden relative">
-            <div className="flex-1 overflow-y-auto scroll-smooth scrollbar-hide" ref={resultsRef}>
-              <AnimatePresence mode="wait">
-                {!audit && !loading ? (
-                  <motion.div 
-                    key="empty"
-                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                    className="h-full flex flex-col items-center justify-center p-20 text-center"
-                  >
-                    {error ? (
-                      <div className="space-y-6">
-                        <div className="w-20 h-20 rounded-3xl bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-6">
-                           <AlertTriangle className="w-8 h-8 text-red-500" />
-                        </div>
-                        <h3 className="text-2xl font-display font-black uppercase tracking-tight text-white">System Resource Constraint</h3>
-                        <p className="text-red-400/80 max-w-sm mx-auto text-xs leading-relaxed mb-8 font-mono bg-red-500/5 p-4 rounded-xl border border-red-500/10">
-                          {error}
-                        </p>
+          <div className="max-w-7xl mx-auto w-full px-6 lg:px-12">
+            <AnimatePresence mode="wait">
+              {stage === 'input' && (
+                <motion.div 
+                  key="input"
+                  initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
+                  className="py-12"
+                >
+                  <div className="text-center mb-16 space-y-4">
+                     <h2 className="text-5xl font-display font-black uppercase text-white tracking-tighter">Initialize Audit System</h2>
+                     <p className="text-text-dim text-sm uppercase tracking-widest max-w-xl mx-auto opacity-60">
+                        Professional-grade logic analysis for Solidity, Rust, and JavaScript smart contracts.
+                     </p>
+                  </div>
+                  <FileSelector 
+                    onCodeSubmitted={handleFilesSelected}
+                  />
+
+                  <div className="mt-12 flex flex-col items-center gap-4">
+                     <p className="text-[10px] font-black uppercase text-text-dim tracking-[0.3em]">Quick Utilities</p>
+                     <div className="flex gap-4">
                         <button 
-                          onClick={() => handleAudit()}
-                          className="flex items-center gap-3 px-8 py-3.5 bg-white text-black rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-cyber-blue transition-all mx-auto"
+                          onClick={handleSamplePDF}
+                          className="px-8 py-4 bg-white/5 border border-white/10 rounded-2xl flex items-center gap-4 group hover:bg-white/10 transition-all"
                         >
-                           <History className="w-3.5 h-3.5" />
-                           Re-initialize Neural Audit
+                          <div className="w-10 h-10 rounded-xl bg-cyber-blue/20 flex items-center justify-center text-cyber-blue group-hover:scale-110 transition-transform">
+                             <Sparkles className="w-5 h-5" />
+                          </div>
+                          <div className="text-left">
+                             <p className="text-xs font-black uppercase tracking-widest text-white leading-none mb-1">View Sample Report</p>
+                             <p className="text-[9px] font-medium text-text-dim uppercase tracking-wider">Preview printable certificate</p>
+                          </div>
+                          <ChevronRight className="w-4 h-4 text-text-dim ml-4 opacity-40 group-hover:opacity-100 transition-opacity" />
                         </button>
-                      </div>
-                    ) : (
-                      <>
-                        <div className="w-20 h-20 rounded-3xl bg-white/5 border border-white/10 flex items-center justify-center mb-6">
-                           <Lock className="w-8 h-8 text-white/20" />
+                        
+                        <div className="w-px h-16 bg-white/5" />
+
+                        <div className="px-8 py-4 bg-white/5 border border-white/10 rounded-2xl flex items-center gap-4 opacity-50 cursor-not-allowed">
+                          <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-white/40">
+                             <TrendingDown className="w-5 h-5" />
+                          </div>
+                          <div className="text-left">
+                             <p className="text-xs font-black uppercase tracking-widest text-white/40 leading-none mb-1">Batch Analysis</p>
+                             <p className="text-[9px] font-medium text-text-dim uppercase tracking-wider">Enterprise Only</p>
+                          </div>
                         </div>
-                        <h3 className="text-2xl font-display font-black uppercase tracking-tight mb-3 text-white">Neural Safeguard Standby</h3>
-                        <p className="text-text-dim max-w-sm mx-auto text-xs leading-relaxed mb-8">
-                          Input your protocol source code to begin a comprehensive neural audit and multi-layered threat simulation.
-                        </p>
-                        <button 
-                          onClick={() => handleAudit()}
-                          className="flex items-center gap-3 px-8 py-3.5 bg-white/5 border border-white/10 text-white rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all group"
-                        >
-                           <Cpu className="w-3.5 h-3.5 group-hover:rotate-90 transition-transform" />
-                           Initialize Neural Link
-                        </button>
-                      </>
-                    )}
-                  </motion.div>
-                ) : loading ? (
-                  <motion.div 
-                    key="loading"
-                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                    className="h-full flex flex-col items-center justify-center p-20"
-                  >
-                     <div className="relative mb-10">
-                        <div className="w-24 h-24 rounded-full border-2 border-white/5 flex items-center justify-center">
-                           <Loader2 className="w-10 h-10 text-cyber-blue animate-spin" />
-                        </div>
-                        <div className="absolute inset-0 bg-cyber-blue/10 blur-3xl animate-pulse" />
                      </div>
-                     <h3 className="text-sm font-display font-black uppercase tracking-[0.3em] animate-pulse text-white">Scanning Neural Paths</h3>
-                     <div className="mt-6 flex gap-1.5">
-                        {[0, 1, 2].map(i => (
-                          <motion.div 
-                            key={i}
-                            animate={{ opacity: [0.2, 1, 0.2] }}
-                            transition={{ repeat: Infinity, duration: 1, delay: i * 0.2 }}
-                            className="w-1.5 h-1.5 bg-cyber-blue rounded-full" 
-                          />
-                        ))}
-                     </div>
-                  </motion.div>
-                ) : (
-                  <motion.div 
-                    key="results"
-                    initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                    className="p-8 lg:p-12 space-y-24"
-                  >
-                    {/* 01. Overview */}
-                    <div className="space-y-10">
-                       <div className="flex items-center gap-4">
-                          <span className="text-[10px] font-black text-cyber-blue px-3 py-1 bg-cyber-blue/10 rounded-full border border-cyber-blue/20">01</span>
-                          <h2 className="text-2xl font-display font-black uppercase tracking-tight text-white">Protocol Overview</h2>
-                       </div>
-                       
-                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                          <GlassCard className="p-6 border-cyber-blue/20">
-                             <div className="flex items-center justify-between mb-6">
-                                <span className="text-[9px] font-black text-cyber-blue uppercase tracking-widest">Risk Level</span>
-                                <Activity className="w-4 h-4 text-cyber-blue" />
-                             </div>
-                             <ScoreIndicator value={audit.riskScore} label="Magnitude" color={audit.riskScore > 60 ? "#ef4444" : "#00E5FF"} size="md" />
-                          </GlassCard>
+                  </div>
+                  
+                  {error && (
+                    <div className="mt-8 p-6 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center gap-4 text-red-500">
+                      <AlertTriangle className="w-6 h-6 shrink-0" />
+                      <p className="text-xs font-black uppercase tracking-widest">{error}</p>
+                    </div>
+                  )}
 
-                          <GlassCard className="p-6">
-                             <div className="flex items-center justify-between mb-6">
-                                <span className="text-[9px] font-black text-white uppercase tracking-widest">Environment</span>
-                                <Cpu className="w-4 h-4 text-text-dim" />
-                             </div>
-                             <p className="text-2xl font-display font-black text-white">{audit.compilerVersion}</p>
-                             <div className="mt-3 flex items-center gap-2 text-[9px] font-black uppercase text-green-400">
-                                <CheckCircle2 className="w-3 h-3" /> Compatible
-                             </div>
-                          </GlassCard>
-
-                          <div className="flex flex-col gap-4">
-                             <div className="glass-card flex-1 p-5 relative overflow-hidden group">
-                                <h4 className="text-[9px] font-black text-text-dim uppercase tracking-widest mb-1">Critical Issues</h4>
-                                <p className="text-3xl font-display font-black text-white">
-                                   {audit.vulnerabilities.filter(v => v.severity === 'High' || v.severity === 'Critical').length}
-                                </p>
-                             </div>
-                             <div className="glass-card flex-1 p-5 relative overflow-hidden group">
-                                <h4 className="text-[9px] font-black text-text-dim uppercase tracking-widest mb-1">Coverage Scope</h4>
-                                <p className="text-3xl font-display font-black text-white">42/42 SWC</p>
-                             </div>
+                  <div className="mt-20 grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+                     {[
+                       { icon: Search, title: 'Deep Logic Scan', desc: 'Identifies hidden state machine vulnerabilities and unsafe fund flows.' },
+                       { icon: Shield, title: 'Static & Dynamic', desc: 'Combines pattern matching with AI-driven behavioral simulations.' },
+                       { icon: Zap, title: 'Automated Patches', desc: 'One-click remediation for flagged vulnerabilities with neural code updates.' }
+                     ].map((feat, idx) => (
+                       <div key={idx} className="space-y-4 p-8 glass-card border-white/5 bg-white/[0.01]">
+                          <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center mx-auto mb-4">
+                             <feat.icon className="w-6 h-6 text-cyber-blue" />
                           </div>
+                          <h4 className="text-md font-display font-black uppercase text-white tracking-tight">{feat.title}</h4>
+                          <p className="text-[10px] text-text-dim leading-relaxed uppercase tracking-widest opacity-40">{feat.desc}</p>
                        </div>
+                     ))}
+                  </div>
+                </motion.div>
+              )}
 
-                       <div className="bg-white/[0.01] border border-white/5 rounded-3xl p-8">
-                          <p className="text-sm text-white/90 font-medium leading-relaxed border-l-2 border-cyber-blue pl-6">
-                             {audit.architectureReview}
-                          </p>
-                       </div>
-                    </div>
+              {stage === 'analysis' && (
+                <motion.div 
+                  key="analysis"
+                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                  className="py-40 flex flex-col items-center justify-center"
+                >
+                  <AnalysisProgress currentStep={analysisStep} progress={analysisProgress} />
+                  <div className="mt-12 space-y-2 text-center">
+                     <p className="text-xs font-mono text-text-dim uppercase tracking-[0.3em]">Neural Analyzer Active</p>
+                     <p className="text-lg font-display font-black text-white uppercase tracking-widest">
+                        {analysisStep === 'logic' ? 'Performing AI Logic Review...' : 'Scanning for vulnerabilities...'}
+                     </p>
+                  </div>
+                </motion.div>
+              )}
 
-                    {/* 02. Vulnerabilities */}
-                    <div className="space-y-10">
-                       <div className="flex items-center gap-4">
-                          <span className="text-[10px] font-black text-red-400 px-3 py-1 bg-red-400/10 rounded-full border border-red-400/20">02</span>
-                          <h2 className="text-2xl font-display font-black uppercase tracking-tight text-white">Security Vulnerabilities</h2>
-                       </div>
-                       
-                       <div className="space-y-6">
-                          {audit.vulnerabilities.length > 0 ? (
-                            audit.vulnerabilities.map((v, i) => (
-                              <motion.div 
-                                key={i}
-                                initial={{ opacity: 0, scale: 0.98 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                transition={{ delay: i * 0.1 }}
-                                className="glass-card p-0 overflow-hidden border-white/5 hover:border-white/10"
-                              >
-                                 <div className="flex flex-col xl:flex-row">
-                                    <div className="xl:w-64 p-6 border-b xl:border-b-0 xl:border-r border-white/5 bg-white/[0.01]">
-                                       <div className="flex flex-wrap gap-2 mb-4">
-                                          <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase border ${
-                                            v.severity === 'Critical' ? 'bg-red-500/10 border-red-500/30 text-red-500' :
-                                            v.severity === 'High' ? 'bg-orange-500/10 border-orange-500/30 text-orange-500' :
-                                            'bg-cyber-blue/10 border-cyber-blue/30 text-cyber-blue'
-                                          }`}>
-                                             {v.severity}
-                                          </span>
-                                       </div>
-                                       <p className="text-[8px] font-black text-text-dim uppercase tracking-widest mb-1">Impact</p>
-                                       <p className="text-lg font-display font-black text-white uppercase">{v.impactRadius}</p>
-                                       
-                                       {v.historicalExploitName && (
-                                          <div className="mt-6 p-3 bg-purple-500/5 border border-purple-500/10 rounded-lg">
-                                             <p className="text-[8px] font-black text-purple-400 uppercase tracking-widest">Case Study</p>
-                                             <p className="text-[10px] font-bold text-white mt-1 italic">{v.historicalExploitName}</p>
-                                          </div>
-                                       )}
-                                    </div>
-                                    
-                                    <div className="flex-1 p-6">
-                                       <h4 className="text-md font-display font-black text-white uppercase mb-2">{v.title}</h4>
-                                       <p className="text-[13px] text-text-dim leading-relaxed mb-6">{v.description}</p>
-                                       
-                                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                          <div className="space-y-2">
-                                             <p className="text-[8px] font-black text-red-400 uppercase tracking-widest">Attack Path</p>
-                                             <div className="bg-black/40 rounded-xl p-4 border border-white/5 font-mono text-[10px] text-pink-400/80 max-h-32 overflow-y-auto">
-                                                <code>{v.exploitPoC}</code>
-                                             </div>
-                                          </div>
-                                          <div className="space-y-2">
-                                             <p className="text-[8px] font-black text-green-400 uppercase tracking-widest">Neutralization</p>
-                                             <div className="bg-black/40 rounded-xl p-4 border border-white/5 font-mono text-[10px] text-blue-100/60 max-h-32 overflow-y-auto">
-                                                <code>{v.remediation}</code>
-                                             </div>
-                                          </div>
-                                       </div>
-                                    </div>
-                                 </div>
-                              </motion.div>
-                            ))
-                          ) : (
-                            <div className="glass-card py-20 flex flex-col items-center justify-center border-green-500/20 bg-green-500/[0.01]">
-                               <ShieldCheck className="w-12 h-12 text-green-500 mb-6 opacity-30" />
-                               <p className="text-sm font-display font-black text-white uppercase tracking-widest">No Critical Threats Detected</p>
-                            </div>
-                          )}
-                       </div>
-                    </div>
-
-                    {/* 03. Logic Mapping */}
-                    <div className="space-y-10">
-                       <div className="flex items-center gap-4">
-                          <span className="text-[10px] font-black text-purple-400 px-3 py-1 bg-purple-400/10 rounded-full border border-purple-400/20">03</span>
-                          <h2 className="text-2xl font-display font-black uppercase tracking-tight text-white">Logic Mapping</h2>
-                       </div>
-                       <DependencyGraph data={audit.dependencyGraph} />
-                    </div>
-
-                    {/* 04. Neural Fuzzing */}
-                    <div className="space-y-10">
-                       <div className="flex items-center gap-4">
-                          <span className="text-[10px] font-black text-cyber-purple px-3 py-1 bg-purple-400/10 rounded-full border border-purple-400/20">04</span>
-                          <h2 className="text-2xl font-display font-black uppercase tracking-tight text-white">Neural Fuzzing</h2>
-                       </div>
-                       <FuzzingSimulation scenarios={audit.fuzzingSimulation} />
-                    </div>
-
-                    {/* 05. Remediation */}
-                    <div className="space-y-10">
-                       <div className="flex items-center justify-between flex-wrap gap-6">
-                          <div className="flex items-center gap-4">
-                             <span className="text-[10px] font-black text-green-400 px-3 py-1 bg-green-400/10 rounded-full border border-green-400/20">05</span>
-                             <h2 className="text-2xl font-display font-black uppercase tracking-tight text-white">Smart Fix Delivery</h2>
-                          </div>
-                          <button 
-                            onClick={handleAutoFix}
-                            className="flex items-center gap-3 px-8 py-3.5 bg-white text-black rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-cyber-blue transition-all group"
-                          >
-                             <Wand2 className="w-3.5 h-3.5 group-hover:rotate-12 transition-transform" />
-                             Deploy Security Patch
-                          </button>
-                       </div>
-
-                       <div className="glass-card p-1 bg-cyber-blue/5 border-cyber-blue/20 rounded-[2rem]">
-                          <div className="bg-black/60 p-8 rounded-[1.8rem] border border-white/5 relative group overflow-hidden">
-                             <div className="absolute top-4 right-6 flex items-center gap-2">
-                                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                                <span className="text-[9px] font-black text-green-500 uppercase tracking-widest">Hardened Patch</span>
-                             </div>
-                             <pre className="font-mono text-[12px] text-blue-100/60 leading-relaxed overflow-x-auto scrollbar-hide max-h-96">
-                                <code>{audit.safeCodeSnippet}</code>
-                             </pre>
-                          </div>
-                       </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-                         <div className="glass-card p-8 bg-black/40">
-                            <p className="text-[9px] font-black text-text-dim uppercase tracking-widest mb-6">Breach Risk Reduction</p>
-                            <div className="flex items-center justify-center gap-8">
-                               <span className="text-4xl font-display font-black text-white opacity-20">{prevRisk || audit.riskScore}</span>
-                               <TrendingDown className="w-8 h-8 text-cyber-blue" />
-                               <span className="text-7xl font-display font-black text-cyber-blue">{audit.riskScore}</span>
-                            </div>
-                         </div>
-                         <div className="space-y-4">
-                            <div className="glass-card p-5 flex items-center gap-4">
-                               <div className="w-10 h-10 rounded-lg bg-green-400/10 flex items-center justify-center">
-                                  <ShieldCheck className="w-5 h-5 text-green-400" />
-                               </div>
-                               <div>
-                                  <p className="text-[9px] font-black text-text-dim uppercase tracking-widest">Status</p>
-                                  <p className="text-lg font-display font-black text-white">Protocol Hardened</p>
-                               </div>
-                            </div>
-                            <div className="glass-card p-5 flex items-center gap-4">
-                               <div className="w-10 h-10 rounded-lg bg-cyber-blue/10 flex items-center justify-center">
-                                  <Zap className="w-5 h-5 text-cyber-blue" />
-                               </div>
-                               <div>
-                                  <p className="text-[9px] font-black text-text-dim uppercase tracking-widest">Integrity Delta</p>
-                                  <p className="text-lg font-display font-black text-white">+{prevRisk ? prevRisk - audit.riskScore : 0}% Gain</p>
-                               </div>
-                            </div>
-                         </div>
-                      </div>
-                    </div>
-
-                    {/* 06. Surveillance */}
-                    <div className="space-y-10 pb-20">
-                       <div className="flex items-center gap-4">
-                          <span className="text-[10px] font-black text-cyber-blue px-3 py-1 bg-cyber-blue/10 rounded-full border border-cyber-blue/20">06</span>
-                          <h2 className="text-2xl font-display font-black uppercase tracking-tight text-white">Intrusion Surveillance</h2>
-                       </div>
-                       <ThreatMonitor metrics={audit.threatMonitoringData} />
-                       <div className="mt-12">
-                          <AuditReport audit={audit} />
-                       </div>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+              {stage === 'report' && audit && (
+                <motion.div 
+                  key="report"
+                  initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+                  className="py-12"
+                >
+                  <AnalysisDashboard 
+                    audit={audit} 
+                    isFixed={appliedFix}
+                    onAutoFix={handleAutoFix}
+                    onShare={handleShare}
+                    onManualReview={handleManualReview}
+                    onSamplePDF={handleSamplePDF}
+                    onExport={(format) => {
+                      if (format === 'json') {
+                         const data = JSON.stringify(audit, null, 2);
+                         const blob = new Blob([data], { type: 'application/json' });
+                         const url = URL.createObjectURL(blob);
+                         const a = document.createElement('a');
+                         a.href = url;
+                         a.download = `audit_${audit.name.replace(/\s+/g, '_')}.json`;
+                         a.click();
+                         setToast("Exporting JSON...");
+                      } else {
+                        setToast("Opening Print Menu... (Choose 'Save as PDF')");
+                        // Use a reliable trigger with a small delay for DOM consistency
+                        setTimeout(() => {
+                          window.print();
+                        }, 800);
+                      }
+                    }}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
+
+          <footer className="border-t border-white/5 pt-12 text-center pb-20 bg-black/40 print:hidden">
+             <div className="flex justify-center gap-12 mb-8 opacity-20 grayscale">
+                <Shield className="w-8 h-8" />
+                <Lock className="w-8 h-8" />
+                <Code className="w-8 h-8" />
+                <Cpu className="w-8 h-8" />
+             </div>
+             <p className="text-[10px] font-black text-text-dim uppercase tracking-[0.5em] mb-4">Secured Security Audit Engine</p>
+             <p className="text-[9px] text-text-dim/40 font-mono tracking-wider">Security Auditor © 2026 | Professional Decentralized Analysis</p>
+          </footer>
         </main>
       </div>
 
-      <SecurityChat code={code} audit={audit} />
+      <div className="print:hidden">
+        <SecurityChat code={files[0].content} audit={audit} />
+      </div>
 
-      <footer className="mt-20 border-t border-white/5 pt-12 text-center pb-20">
-         <div className="flex justify-center gap-12 mb-8 opacity-40 grayscale hover:grayscale-0 transition-all duration-700">
-            <Shield className="w-8 h-8" />
-            <ExternalLink className="w-8 h-8" />
-            <Cpu className="w-8 h-8" />
-         </div>
-         <p className="text-[10px] font-bold text-text-dim uppercase tracking-[0.8em] mb-4">Quantum-Secured Audit Engine</p>
-         <p className="text-[9px] text-text-dim/60 font-mono">Rexy AI © 2026 | Developed for the Next Generation of DeFi Protocols</p>
-      </footer>
+      {/* Global Toast */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 px-6 py-3 bg-white text-black text-[10px] font-black uppercase tracking-widest rounded-full shadow-2xl flex items-center gap-3 border border-white/20"
+          >
+            <CheckCircle className="w-4 h-4 text-green-500" />
+            {toast}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
+
