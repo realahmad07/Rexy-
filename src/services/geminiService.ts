@@ -147,6 +147,7 @@ export async function auditSmartContract(files: ContractFile[] | string): Promis
         config: {
           systemInstruction: "You are the world's leading AI Smart Contract Auditor. YOUR TOP PRIORITY IS SPEED AND VALID JSON. If the audit is large, summarize and focus ONLY on critical fixes.",
           responseMimeType: "application/json",
+          temperature: 0.1,
           maxOutputTokens: 20480, // slightly reduced to speed up generation
           ...thinkingConfig,
           responseSchema: {
