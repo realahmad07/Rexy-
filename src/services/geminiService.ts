@@ -27,10 +27,9 @@ function getAI() {
 }
 
 const MODELS = [
-  "gemini-1.5-flash", // Highest RPM for Free Tier (15 RPM)
-  "gemini-2.0-flash", 
-  "gemini-3.1-flash-lite-preview",
-  "gemini-3-flash-preview"
+  "gemini-2.0-flash",           // Fast and reliable for auditing
+  "gemini-3.1-flash-lite-preview", // Best for high-throughput/free tier
+  "gemini-3-flash-preview"      // Reliable fallback
 ];
 
 export interface ContractFile {
