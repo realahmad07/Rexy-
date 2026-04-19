@@ -77,7 +77,6 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [analysisProgress, setAnalysisProgress] = useState(0);
   const [analysisStep, setAnalysisStep] = useState('parsing');
-  const [isSimulationMode, setIsSimulationMode] = useState(false);
   const [appliedFix, setAppliedFix] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [printingSample, setPrintingSample] = useState(false);
@@ -97,12 +96,12 @@ export default function App() {
     setAnalysisStep('parsing');
     setAppliedFix(isFix);
 
-    // Simulate analysis phases
+    // Analysis phases timing
     const phases = [
-      { step: 'parsing', progress: 25, duration: isSimulationMode ? 500 : 1500 },
-      { step: 'scanning', progress: 50, duration: isSimulationMode ? 500 : 2000 },
-      { step: 'vulnerabilities', progress: 75, duration: isSimulationMode ? 500 : 2000 },
-      { step: 'logic', progress: 90, duration: isSimulationMode ? 500 : 2500 }
+      { step: 'parsing', progress: 25, duration: 1500 },
+      { step: 'scanning', progress: 50, duration: 2000 },
+      { step: 'vulnerabilities', progress: 75, duration: 2000 },
+      { step: 'logic', progress: 90, duration: 2500 }
     ];
 
     for (const phase of phases) {
@@ -111,12 +110,7 @@ export default function App() {
       await new Promise(r => setTimeout(r, phase.duration));
     }
 
-    let result;
-    if (isSimulationMode) {
-      result = generateSimulationResult(targetFiles);
-    } else {
-      result = await auditSmartContract(targetFiles);
-    }
+    const result = await auditSmartContract(targetFiles);
 
     if (result) {
       setAudit(result);
@@ -178,31 +172,6 @@ export default function App() {
     }
   };
 
-  const handleSamplePDF = async () => {
-    setLoading(true);
-    // Force simulation for sample
-    const sampleFiles: ContractFile[] = [{ name: 'Sample_Contract.sol', content: '// Sample Code' }];
-    setFiles(sampleFiles);
-    
-    // Quick simulate
-    const result = generateSimulationResult(sampleFiles);
-    setAudit(result);
-    setStage('report');
-    setLoading(false);
-    setPrintingSample(true);
-    
-    setToast("Generating Sample Certificate...");
-    
-    // Small delay to ensure render
-    setTimeout(() => {
-      const originalTitle = document.title;
-      document.title = `Sample_Audit_Rexy_AI`;
-      window.print();
-      document.title = originalTitle;
-      setPrintingSample(false);
-    }, 1500);
-  };
-
   return (
     <div className="min-h-screen bg-dark-bg text-slate-200 selection:bg-cyber-blue/30 font-sans">
       {/* Background Elements */}
@@ -226,19 +195,6 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-8">
-            <div className="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-full border border-white/10">
-               <span className="text-[9px] font-black text-white/40 uppercase tracking-widest">Simulation</span>
-               <button 
-                 onClick={() => setIsSimulationMode(!isSimulationMode)}
-                 className={`w-8 h-4 rounded-full relative transition-colors ${isSimulationMode ? 'bg-cyber-blue' : 'bg-white/20'}`}
-               >
-                  <motion.div 
-                    animate={{ x: isSimulationMode ? 16 : 2 }}
-                    className="absolute top-1 w-2 h-2 rounded-full bg-white shadow-sm"
-                  />
-               </button>
-            </div>
-
             {stage === 'report' && audit && (
               <div className="hidden md:flex items-center gap-6">
                 <div className="flex flex-col items-end">
@@ -310,37 +266,6 @@ export default function App() {
                     onCodeSubmitted={handleFilesSelected}
                   />
 
-                  <div className="mt-12 flex flex-col items-center gap-4">
-                     <p className="text-[10px] font-black uppercase text-text-dim tracking-[0.3em]">Quick Utilities</p>
-                     <div className="flex gap-4">
-                        <button 
-                          onClick={handleSamplePDF}
-                          className="px-8 py-4 bg-white/5 border border-white/10 rounded-2xl flex items-center gap-4 group hover:bg-white/10 transition-all"
-                        >
-                          <div className="w-10 h-10 rounded-xl bg-cyber-blue/20 flex items-center justify-center text-cyber-blue group-hover:scale-110 transition-transform">
-                             <Sparkles className="w-5 h-5" />
-                          </div>
-                          <div className="text-left">
-                             <p className="text-xs font-black uppercase tracking-widest text-white leading-none mb-1">View Sample Report</p>
-                             <p className="text-[9px] font-medium text-text-dim uppercase tracking-wider">Preview printable certificate</p>
-                          </div>
-                          <ChevronRight className="w-4 h-4 text-text-dim ml-4 opacity-40 group-hover:opacity-100 transition-opacity" />
-                        </button>
-                        
-                        <div className="w-px h-16 bg-white/5" />
-
-                        <div className="px-8 py-4 bg-white/5 border border-white/10 rounded-2xl flex items-center gap-4 opacity-50 cursor-not-allowed">
-                          <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-white/40">
-                             <TrendingDown className="w-5 h-5" />
-                          </div>
-                          <div className="text-left">
-                             <p className="text-xs font-black uppercase tracking-widest text-white/40 leading-none mb-1">Batch Analysis</p>
-                             <p className="text-[9px] font-medium text-text-dim uppercase tracking-wider">Enterprise Only</p>
-                          </div>
-                        </div>
-                     </div>
-                  </div>
-                  
                   {error && (
                     <div className="mt-8 p-6 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center gap-4 text-red-500">
                       <AlertTriangle className="w-6 h-6 shrink-0" />
@@ -394,7 +319,6 @@ export default function App() {
                     onAutoFix={handleAutoFix}
                     onShare={handleShare}
                     onManualReview={handleManualReview}
-                    onSamplePDF={handleSamplePDF}
                     onExport={(format) => {
                       if (format === 'json') {
                          const data = JSON.stringify(audit, null, 2);
