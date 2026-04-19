@@ -372,13 +372,13 @@ modifier nonReentrant() {
                     <Cpu className="w-8 h-8" />
                 </div>
                 
-                {/* API Status Indicator */}
-                <div className="flex items-center gap-2 px-3 py-1 bg-white/5 border border-white/10 rounded-full">
-                   <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${process.env.GEMINI_API_KEY ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]' : 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]'}`} />
-                   <span className="text-[10px] font-mono uppercase tracking-widest text-white/40">
-                      Neural Engine: {process.env.GEMINI_API_KEY ? 'Connected' : 'Authentication Required'}
-                   </span>
-                </div>
+    {/* API Status Indicator */}
+    <div className="flex items-center gap-2 px-3 py-1 bg-white/5 border border-white/10 rounded-full">
+       <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${import.meta.env.VITE_GEMINI_API_KEY ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]' : 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]'}`} />
+       <span className="text-[10px] font-mono uppercase tracking-widest text-white/40">
+          Neural Engine: {import.meta.env.VITE_GEMINI_API_KEY ? 'Connected' : 'Authentication Required'}
+       </span>
+    </div>
              </div>
              <p className="text-[10px] font-black text-text-dim uppercase tracking-[0.5em] mb-4">Secured Security Audit Engine</p>
              <p className="text-[9px] text-text-dim/40 font-mono tracking-wider">Security Auditor © 2026 | Professional Decentralized Analysis</p>
