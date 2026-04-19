@@ -120,17 +120,19 @@ export function AnalysisProgress({ currentStep, progress }: { currentStep: strin
         <div className="w-full glass-card p-0 border-white/5 bg-black/40 overflow-hidden">
            <div className="flex items-center gap-2 px-4 py-2 bg-white/5 border-b border-white/5">
               <TerminalIcon className="w-3 h-3 text-cyber-blue" />
-              <span className="text-[9px] font-black uppercase tracking-widest text-text-dim">Neural Simulation Feed</span>
+              <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-text-dim/60">Neural Simulation Feed</span>
            </div>
-           <div className="p-4 h-32 font-mono text-[10px] text-cyber-blue/60 leading-relaxed overflow-hidden">
-              <AnimatePresence mode="popLayout">
+           <div className="p-4 h-32 font-mono text-[10px] text-cyber-blue/80 leading-relaxed overflow-hidden">
+              <AnimatePresence mode="popLayout" initial={false}>
                 {activeLogs.map((log, i) => (
                   <motion.div
                     key={log + i}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 10 }}
-                    className="truncate py-0.5 border-l border-cyber-blue/10 pl-3 mb-1 bg-linear-to-r from-cyber-blue/5 to-transparent"
+                    layout
+                    initial={{ opacity: 0, x: -5, y: 10 }}
+                    animate={{ opacity: 1, x: 0, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ duration: 0.3 }}
+                    className="truncate py-1 border-l border-cyber-blue/20 pl-3 mb-1 bg-linear-to-r from-cyber-blue/[0.03] to-transparent"
                   >
                     {log}
                   </motion.div>

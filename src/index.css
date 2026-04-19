@@ -6,30 +6,31 @@
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
   --font-display: "Space Grotesk", sans-serif;
 
-  --color-cyber-blue: #3b82f6; /* Modern Blue */
-  --color-cyber-purple: #8b5cf6;
-  --color-dark-bg: #020617; /* Deep Midnight */
-  --color-card-bg: #0f172a; /* Slate Card */
-  --color-border: #1e293b;
-  --color-text-dim: #94a3b8;
+  --color-cyber-blue: #0ea5e9; /* Deep Sky Blue */
+  --color-cyber-purple: #a855f7;
+  --color-dark-bg: #050505; /* True Dark */
+  --color-card-bg: #111111; /* Matrix Card */
+  --color-border: #1a1a1a;
+  --color-text-dim: #a1a1aa;
 }
 
 @layer base {
   body {
-    @apply bg-dark-bg text-slate-200 font-sans antialiased;
+    @apply bg-dark-bg text-zinc-300 font-sans antialiased selection:bg-cyber-blue/30 selection:text-white;
   }
 }
 
 .glass-card {
-  @apply bg-card-bg border border-border rounded-xl p-5 flex flex-col relative overflow-hidden transition-all duration-200;
+  @apply bg-card-bg border border-border rounded-2xl p-6 flex flex-col relative overflow-hidden transition-all duration-300 ease-out;
 }
 
 .glass-card:hover {
-  @apply border-cyber-blue/50 ring-1 ring-cyber-blue/20;
+  @apply border-cyber-blue/30 bg-zinc-900/40;
+  box-shadow: 0 0 40px rgba(14, 165, 233, 0.05);
 }
 
 .card-title {
-  @apply text-[10px] uppercase tracking-widest text-text-dim mb-2 font-bold;
+  @apply text-[10px] uppercase font-bold tracking-[0.2em] text-text-dim/60 mb-4 px-1;
 }
 
 .accent-glow {

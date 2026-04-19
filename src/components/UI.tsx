@@ -38,13 +38,13 @@ export function GlassCard({ title, icon: Icon, children, className = "", delay =
 
 export function Badge({ children, variant = 'blue', className = "" }: { children: React.ReactNode, variant?: 'blue' | 'purple' | 'green', className?: string }) {
   const colors = {
-    blue: 'bg-cyber-blue/10 text-cyber-blue border-cyber-blue/30 shadow-[0_0_15px_rgba(0,229,255,0.1)]',
-    purple: 'bg-cyber-purple/10 text-cyber-purple border-cyber-purple/30 shadow-[0_0_15px_rgba(188,19,254,0.1)]',
-    green: 'bg-green-500/10 text-green-400 border-green-500/30 shadow-[0_0_15px_rgba(34,197,94,0.1)]',
+    blue: 'bg-cyber-blue/5 text-cyber-blue border-cyber-blue/20',
+    purple: 'bg-cyber-purple/5 text-cyber-purple border-cyber-purple/20',
+    green: 'bg-emerald-500/5 text-emerald-400 border-emerald-500/20',
   };
   
   return (
-    <span className={`px-3 py-1 rounded-full text-[9px] uppercase tracking-widest font-black border backdrop-blur-md ${colors[variant]} ${className}`}>
+    <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold tracking-tight border backdrop-blur-sm ${colors[variant]} ${className}`}>
       {children}
     </span>
   );
@@ -53,31 +53,31 @@ export function Badge({ children, variant = 'blue', className = "" }: { children
 export function ScoreIndicator({ label, value, color, size = "md" }: { label: string, value: number, color: string, size?: "sm" | "md" | "lg" }) {
   const dimensions = {
     sm: 64,
-    md: 96,
-    lg: 160
+    md: 88,
+    lg: 140
   };
   
   const textSize = {
     sm: "text-xs",
     md: "text-xl",
-    lg: "text-5xl"
+    lg: "text-4xl"
   };
 
   const dim = dimensions[size];
   const center = dim / 2;
-  const strokeWidth = size === "lg" ? 6 : 4;
+  const strokeWidth = size === "lg" ? 8 : 4;
   const radius = (dim - strokeWidth * 2) / 2;
   const circumference = 2 * Math.PI * radius;
 
   return (
     <div className="flex flex-col items-center group">
-      <div className="relative flex items-center justify-center" style={{ width: dim, height: dim }}>
-        <div className="absolute inset-0 bg-white/[0.02] rounded-full blur-xl group-hover:blur-2xl transition-all" />
+      <div className="relative flex items-center justify-center p-4 border border-white/5 rounded-3xl bg-white/[0.01]" style={{ width: dim + 40, height: dim + 40 }}>
+        <div className="absolute inset-0 bg-white/[0.01] rounded-3xl group-hover:bg-white/[0.03] transition-all" />
         <svg 
           width={dim} 
           height={dim} 
           viewBox={`0 0 ${dim} ${dim}`} 
-          className="-rotate-90"
+          className="-rotate-90 relative z-10"
         >
           <circle
             cx={center}
@@ -86,7 +86,7 @@ export function ScoreIndicator({ label, value, color, size = "md" }: { label: st
             fill="none"
             stroke="currentColor"
             strokeWidth={strokeWidth}
-            className="text-white/5"
+            className="text-white/[0.03]"
           />
           <motion.circle
             cx={center}
@@ -98,13 +98,13 @@ export function ScoreIndicator({ label, value, color, size = "md" }: { label: st
             strokeDasharray={circumference}
             initial={{ strokeDashoffset: circumference }}
             animate={{ strokeDashoffset: circumference - (circumference * value) / 100 }}
-            transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
-            style={{ filter: `drop-shadow(0 0 8px ${color})` }}
+            transition={{ duration: 1.5, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
+            strokeLinecap="round"
           />
         </svg>
-        <span className={`absolute ${textSize[size]} font-display font-black tracking-tighter`}>{value}</span>
+        <span className={`absolute ${textSize[size]} font-display font-medium tracking-tight text-white z-20`}>{value}</span>
       </div>
-      <span className="text-[10px] uppercase tracking-widest text-text-dim mt-4 font-black">{label}</span>
+      <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-text-dim/60 mt-4 px-1">{label}</span>
     </div>
   );
 }

@@ -63,7 +63,12 @@ const severityBg: Record<string, string> = {
 };
 
 export function AnalysisDashboard({ audit, onAutoFix, onExport, onShare, onManualReview, onSamplePDF, isFixed }: DashboardProps) {
-  const vulnerabilities = audit.vulnerabilities || [];
+  // Normalize vulnerabilities to ensure consistent casing for styling and counting
+  const vulnerabilities = (audit.vulnerabilities || []).map(v => ({
+    ...v,
+    severity: (v.severity ? (v.severity.charAt(0).toUpperCase() + v.severity.slice(1).toLowerCase()) : 'Low') as Severity
+  }));
+  
   const logicFlow = audit.logicFlow || [];
   const dependencyGraph = (audit.dependencyGraph?.nodes?.length > 0) ? audit.dependencyGraph : {
     nodes: [
@@ -98,6 +103,7 @@ export function AnalysisDashboard({ audit, onAutoFix, onExport, onShare, onManua
   const threatMonitoringData = audit.threatMonitoringData || [];
 
   const cleanText = (txt: string | undefined) => (txt || '').replace(/(\*\*|__)/g, '');
+  const normalizedRiskLevel = (audit.riskLevel ? (audit.riskLevel.charAt(0).toUpperCase() + audit.riskLevel.slice(1).toLowerCase()) : 'Low') as Severity;
 
   const counts = vulnerabilities.reduce((acc, v) => {
     acc[v.severity] = (acc[v.severity] || 0) + 1;
@@ -220,8 +226,8 @@ modifier nonReentrant() {
                     {audit.finalVerdict}
                   </h2>
                   <div className="flex flex-wrap items-center gap-3">
-                     <Badge variant={audit.riskLevel === 'Low' ? 'green' : audit.riskLevel === 'Critical' ? 'purple' : 'blue'}>
-                       {audit.riskLevel} Overall Risk
+                     <Badge variant={normalizedRiskLevel === 'Low' ? 'green' : normalizedRiskLevel === 'Critical' ? 'purple' : 'blue'}>
+                       {normalizedRiskLevel} Overall Risk
                      </Badge>
                      <span className="text-[10px] font-mono text-text-dim uppercase tracking-widest bg-white/5 px-2 py-0.5 rounded border border-white/5">
                        {audit.language} // {audit.framework}
@@ -280,70 +286,103 @@ modifier nonReentrant() {
           </section>
 
       {/* B. Vulnerability List */}
-      <section id="security-findings" className="space-y-8">
-         <div className="flex items-center justify-between">
-            <h3 className="text-2xl font-display font-black uppercase text-white tracking-tighter">Security Findings</h3>
-            <span className="text-[10px] font-bold text-text-dim uppercase tracking-widest">{vulnerabilities.length} Issues Detected</span>
+      <section id="security-findings" className="space-y-10">
+         <div className="flex items-center justify-between border-b border-white/5 pb-8 relative">
+            <div className="absolute bottom-0 left-0 w-24 h-0.5 bg-cyber-blue" />
+            <div className="space-y-1">
+               <h3 className="text-3xl font-display font-medium text-white tracking-tight">Security Intelligence Registry</h3>
+               <p className="text-[10px] font-mono font-medium text-text-dim/60 uppercase tracking-[0.3em]">Deep-scan findings and neural remediation vectors</p>
+            </div>
+            <div className="flex items-center gap-3">
+               <div className="text-right">
+                  <p className="text-[10px] font-bold text-white uppercase tracking-widest">{vulnerabilities.length} Points of interest</p>
+                  <p className="text-[9px] text-text-dim/40 font-mono">Neural Engine v3.1</p>
+               </div>
+               <div className="w-10 h-10 rounded-full border border-white/5 flex items-center justify-center bg-white/[0.02]">
+                  <Activity className="w-4 h-4 text-cyber-blue opacity-50" />
+               </div>
+            </div>
          </div>
          
-         <div className="space-y-6">
+         <motion.div 
+            className="space-y-6"
+            initial="hidden"
+            animate="visible"
+            variants={{
+               hidden: { opacity: 0 },
+               visible: {
+                  opacity: 1,
+                  transition: { staggerChildren: 0.1 }
+               }
+            }}
+         >
             {vulnerabilities.map((v, idx) => (
                <motion.div 
                  key={idx}
-                 initial={{ opacity: 0, y: 20 }}
-                 whileInView={{ opacity: 1, y: 0 }}
-                 viewport={{ once: true }}
-                 transition={{ delay: idx * 0.1 }}
+                 variants={{
+                    hidden: { opacity: 0, x: -20 },
+                    visible: { opacity: 1, x: 0 }
+                 }}
+                 transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
                  className={`glass-card p-0 overflow-hidden border-white/10 hover:border-white/20 transition-all ${severityBorders[v.severity]} ${severityBg[v.severity]}`}
                >
                   <div className="flex flex-col lg:flex-row">
-                     <div className="lg:w-72 p-8 border-b lg:border-b-0 lg:border-r border-white/5 bg-black/20">
-                        <div className="flex items-center gap-2 mb-4">
-                           <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase ${severityColors[v.severity]} bg-white/5 border border-current opacity-70`}>
+                     <div className="lg:w-72 p-8 border-b lg:border-b-0 lg:border-r border-white/5 bg-black/20 flex flex-col">
+                        <div className="flex items-center gap-2 mb-6">
+                           <div className={`px-2 py-1 rounded text-[9px] font-bold uppercase tracking-wider ${severityColors[v.severity]} bg-white/5 border border-white/10`}>
                              {v.severity}
-                           </span>
-                           <span className="text-[8px] font-black text-white/40 uppercase tracking-widest">{v.confidence}% Confidence</span>
+                           </div>
+                           <div className="h-px flex-1 bg-white/5" />
+                           <span className="text-[9px] font-bold text-white/30 uppercase tracking-[0.2em]">{v.confidence}%</span>
                         </div>
-                        <p className="text-[9px] font-semibold text-text-dim uppercase tracking-widest mb-1.5 font-mono">Location</p>
-                        <p className="text-sm font-medium text-white/70 mb-6 truncate">
-                           {(v.lineNumbers && v.lineNumbers.length > 0) ? `${v.fileName}:L.${v.lineNumbers.join(',')}` : `${v.fileName} (Global)`}
-                        </p>
-                        
-                        <div className="mt-8 p-4 bg-white/5 rounded-2xl border border-white/5">
-                           <p className="text-[8px] font-semibold text-text-dim uppercase tracking-widest mb-2">Impact</p>
-                           <p className="text-[10px] text-white/50 leading-relaxed italic">{v.impact}</p>
+
+                        <div className="space-y-6 flex-1">
+                          <div>
+                            <p className="text-[10px] font-bold text-text-dim/60 uppercase tracking-[0.2em] mb-2 font-mono">Registry Source</p>
+                            <p className="text-xs font-medium text-white/80 leading-snug">
+                               {(v.lineNumbers && v.lineNumbers.length > 0) ? `${v.fileName}:L.${v.lineNumbers.join(',')}` : `${v.fileName}`}
+                            </p>
+                          </div>
+                          
+                          <div className="pt-4 border-t border-white/5">
+                             <p className="text-[10px] font-bold text-text-dim/60 uppercase tracking-[0.2em] mb-3">Threat Potential</p>
+                             <div className="p-4 bg-white/5 rounded-xl border border-white/5">
+                               <p className="text-[11px] text-text-dim leading-relaxed font-medium italic opacity-80">{v.impact}</p>
+                             </div>
+                          </div>
                         </div>
                      </div>
 
-                     <div className="flex-1 p-8 lg:p-10">
-                        <h4 className="text-2xl font-display font-bold text-white uppercase tracking-tight mb-4">{cleanText(v.title)}</h4>
-                        <p className="text-sm text-text-dim leading-relaxed mb-8 max-w-2xl">{cleanText(v.description)}</p>
-                        
-                        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-                           <div className="space-y-3">
-                              <div className="flex items-center gap-2">
-                                 <AlertTriangle className="w-3.5 h-3.5 text-orange-400" />
-                                 <p className="text-[9px] font-bold text-orange-400 uppercase tracking-widest">Remediation</p>
-                              </div>
-                               <div className="bg-black/40 rounded-2xl p-6 border border-white/5 text-xs text-white/70 leading-relaxed break-words whitespace-pre-wrap">
-                                 {cleanText(v.remediation) || "1. Deep-scan modules for access control faults.\n2. Ensure all state changes follow the Checks-Effects-Interactions pattern.\n3. Validate inputs against zero-addresses and boundary limits."}
-                              </div>
-                           </div>
-                           <div className="space-y-3">
-                              <div className="flex items-center gap-2">
-                                 <Code2 className="w-3.5 h-3.5 text-cyber-blue" />
-                                 <p className="text-[9px] font-bold text-cyber-blue uppercase tracking-widest">Recommended Fix</p>
-                              </div>
-                              <div className="bg-black/60 rounded-2xl p-6 border border-white/5 font-mono text-[10px] text-blue-100/50 break-all whitespace-pre-wrap">
-                                 <code>{v.codeSnippet || "// Neural Patch Auto-Generated\nmodifier secureRoute() {\n  require(msg.sender != address(0), 'Sec: Invalid caller');\n  _;\n}"}</code>
-                              </div>
-                           </div>
-                        </div>
+                     <div className="flex-1 p-8 lg:p-12">
+                         <h4 className="text-xl font-display font-semibold text-white tracking-tight mb-3 px-1">{v.title}</h4>
+                         <p className="text-balance text-sm text-text-dim leading-relaxed mb-6 max-w-2xl px-1">{v.description}</p>
+                         
+                         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                            <div className="space-y-4">
+                               <div className="flex items-center gap-2 px-1">
+                                  <AlertTriangle className="w-3.5 h-3.5 text-orange-400" />
+                                  <p className="text-[10px] font-bold text-orange-400/80 uppercase tracking-[0.2em]">Remediation Strategy</p>
+                               </div>
+                                <div className="bg-black/40 rounded-2xl p-6 border border-white/5 text-[13px] text-white/80 leading-relaxed shadow-inner">
+                                  {v.remediation || "Review module access controls and implement standardized reentrancy guards."}
+                               </div>
+                            </div>
+                            <div className="space-y-4">
+                               <div className="flex items-center gap-2 px-1">
+                                  <Code2 className="w-3.5 h-3.5 text-cyber-blue" />
+                                  <p className="text-[10px] font-bold text-cyber-blue/80 uppercase tracking-[0.2em]">Neural Fix Suggestion</p>
+                               </div>
+                               <div className="bg-black/60 rounded-2xl p-6 border border-white/5 font-mono text-[11px] text-blue-100/60 break-all whitespace-pre-wrap overflow-hidden relative group/code">
+                                  <div className="absolute top-2 right-4 text-[9px] opacity-20 uppercase font-bold tracking-widest group-hover/code:opacity-40 transition-opacity">Suggested Patch</div>
+                                  <code>{v.codeSnippet || "// Neural Patch Auto-Generated\nmodifier secureRoute() {\n  require(msg.sender != address(0), 'Sec: Invalid caller');\n  _;\n}"}</code>
+                               </div>
+                            </div>
+                         </div>
                      </div>
                   </div>
                </motion.div>
             ))}
-         </div>
+         </motion.div>
       </section>
 
       {/* E. Advanced Intelligence Matrix */}

@@ -156,7 +156,11 @@ export async function auditSmartContract(files: ContractFile[] | string): Promis
               language: { type: Type.STRING },
               framework: { type: Type.STRING },
               securityScore: { type: Type.NUMBER },
-              riskLevel: { type: Type.STRING },
+              riskLevel: { 
+                type: Type.STRING,
+                enum: ['Critical', 'High', 'Medium', 'Low'],
+                description: "The overall risk assessment color"
+              },
               summary: { type: Type.STRING },
               financialRiskSummary: { type: Type.STRING },
               logicRiskSummary: { type: Type.STRING },
@@ -166,7 +170,11 @@ export async function auditSmartContract(files: ContractFile[] | string): Promis
                   type: Type.OBJECT,
                   properties: {
                     title: { type: Type.STRING },
-                    severity: { type: Type.STRING },
+                    severity: { 
+                      type: Type.STRING, 
+                      enum: ['Critical', 'High', 'Medium', 'Low'],
+                      description: "Mandatory: Must be exactly one of: Critical, High, Medium, Low"
+                    },
                     confidence: { type: Type.NUMBER },
                     fileName: { type: Type.STRING },
                     lineNumbers: { type: Type.ARRAY, items: { type: Type.NUMBER } },
