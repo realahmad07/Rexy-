@@ -13,7 +13,18 @@
 import { GoogleGenAI, Type, ThinkingLevel } from "@google/genai";
 import { ContractAudit, Severity } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+let aiInstance: GoogleGenAI | null = null;
+
+function getAI() {
+  if (!aiInstance) {
+    const key = process.env.GEMINI_API_KEY;
+    if (!key || key === 'undefined' || key === '') {
+      throw new Error("GEMINI_API_KEY is missing. Please set it in your environment variables.");
+    }
+    aiInstance = new GoogleGenAI({ apiKey: key });
+  }
+  return aiInstance;
+}
 
 const MODELS = [
   "gemini-3.1-flash-lite-preview", // High throughput workhorse (Hackathon Priority)
@@ -121,7 +132,7 @@ export async function auditSmartContract(files: ContractFile[] | string): Promis
         ? { thinkingConfig: { thinkingLevel: ThinkingLevel.MINIMAL } } 
         : {};
 
-      const response = await fetchWithRetry(() => ai.models.generateContent({
+      const response = await fetchWithRetry(() => getAI().models.generateContent({
         model: modelName,
         contents: prompt,
         config: {
@@ -505,7 +516,7 @@ export async function chatWithRexy(message: string, context: { code: string; aud
   for (const modelName of MODELS) {
     try {
       const result = await fetchWithRetry(() => {
-        const chat = ai.chats.create({
+        const chat = getAI().chats.create({
           model: modelName,
           config: {
             systemInstruction: `You are Rexy, the AI Smart Contract Security Partner. You are helpful, technical, and alert.

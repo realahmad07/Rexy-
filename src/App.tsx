@@ -362,12 +362,23 @@ modifier nonReentrant() {
             </AnimatePresence>
           </div>
 
-          <footer className="border-t border-white/5 pt-12 text-center pb-20 bg-black/40 print:hidden">
-             <div className="flex justify-center gap-12 mb-8 opacity-20 grayscale">
-                <Shield className="w-8 h-8" />
-                <Lock className="w-8 h-8" />
-                <Code className="w-8 h-8" />
-                <Cpu className="w-8 h-8" />
+          <footer className="border-t border-white/5 pt-12 text-center pb-20 bg-black/40 print:hidden relative overflow-hidden">
+             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-px h-12 bg-linear-to-b from-cyber-blue/50 to-transparent" />
+             <div className="flex flex-col items-center gap-6 mb-8">
+                <div className="flex justify-center gap-12 opacity-20 grayscale">
+                    <Shield className="w-8 h-8" />
+                    <Lock className="w-8 h-8" />
+                    <Code className="w-8 h-8" />
+                    <Cpu className="w-8 h-8" />
+                </div>
+                
+                {/* API Status Indicator */}
+                <div className="flex items-center gap-2 px-3 py-1 bg-white/5 border border-white/10 rounded-full">
+                   <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${process.env.GEMINI_API_KEY ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]' : 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]'}`} />
+                   <span className="text-[10px] font-mono uppercase tracking-widest text-white/40">
+                      Neural Engine: {process.env.GEMINI_API_KEY ? 'Connected' : 'Authentication Required'}
+                   </span>
+                </div>
              </div>
              <p className="text-[10px] font-black text-text-dim uppercase tracking-[0.5em] mb-4">Secured Security Audit Engine</p>
              <p className="text-[9px] text-text-dim/40 font-mono tracking-wider">Security Auditor © 2026 | Professional Decentralized Analysis</p>
