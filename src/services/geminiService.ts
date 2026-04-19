@@ -17,9 +17,10 @@ let aiInstance: GoogleGenAI | null = null;
 
 function getAI() {
   if (!aiInstance) {
-    const key = import.meta.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
+    // Following SDK-specific initialization for Vite/React as per system guidelines
+    const key = process.env.GEMINI_API_KEY || (import.meta as any).env.VITE_GEMINI_API_KEY;
     if (!key || key === 'undefined' || key === '') {
-      throw new Error("API Key Missing: Please ensure VITE_GEMINI_API_KEY is set in your Vercel/environment settings.");
+      throw new Error("API Key Missing: Please ensure GEMINI_API_KEY is configured in your project settings.");
     }
     aiInstance = new GoogleGenAI({ apiKey: key });
   }
@@ -27,9 +28,9 @@ function getAI() {
 }
 
 const MODELS = [
-  "gemini-2.0-flash",           // Fast and reliable for auditing
-  "gemini-3.1-flash-lite-preview", // Best for high-throughput/free tier
-  "gemini-3-flash-preview"      // Reliable fallback
+  "gemini-3.1-flash-lite-preview", // Best for free tier / high RPM
+  "gemini-3-flash-preview",      // Stable baseline
+  "gemini-3.1-pro-preview"       // Deep reasoning for complex audits
 ];
 
 export interface ContractFile {
@@ -250,14 +251,20 @@ export async function auditSmartContract(files: ContractFile[] | string): Promis
 
     } catch (error: any) {
       lastError = error;
-      const isQuotaError = 
-        error?.message?.toLowerCase().includes('429') || 
-        error?.message?.toLowerCase().includes('quota') ||
+      const errorMsg = error?.message?.toLowerCase() || "";
+      const isFallbackError = 
+        errorMsg.includes('429') || 
+        errorMsg.includes('quota') ||
+        errorMsg.includes('403') ||
+        errorMsg.includes('permission_denied') ||
+        errorMsg.includes('denied access') ||
         error?.status === 'RESOURCE_EXHAUSTED' || 
-        error?.code === 429;
+        error?.status === 'PERMISSION_DENIED' ||
+        error?.code === 429 ||
+        error?.code === 403;
 
-      if (isQuotaError) {
-        console.warn(`Model ${modelName} hit quota limit. Attempting fallback if available...`);
+      if (isFallbackError) {
+        console.warn(`Model ${modelName} encountered access/quota issue. Attempting fallback...`);
         continue;
       }
       break; 
@@ -523,14 +530,20 @@ export async function chatWithRexy(message: string, context: { code: string; aud
       return result.text;
     } catch (error: any) {
       lastError = error;
-      const isQuotaError = 
-        error?.message?.toLowerCase().includes('429') || 
-        error?.message?.toLowerCase().includes('quota') ||
+      const errorMsg = error?.message?.toLowerCase() || "";
+      const isFallbackError = 
+        errorMsg.includes('429') || 
+        errorMsg.includes('quota') ||
+        errorMsg.includes('403') ||
+        errorMsg.includes('permission_denied') ||
+        errorMsg.includes('denied access') ||
         error?.status === 'RESOURCE_EXHAUSTED' || 
-        error?.code === 429;
+        error?.status === 'PERMISSION_DENIED' ||
+        error?.code === 429 ||
+        error?.code === 403;
 
-      if (isQuotaError) {
-        console.warn(`Chat model ${modelName} hit quota limit. Attempting fallback...`);
+      if (isFallbackError) {
+        console.warn(`Chat model ${modelName} encountered issue. Attempting fallback...`);
         continue;
       }
       break;
