@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import * as d3 from 'd3';
+import { Activity } from 'lucide-react';
 import { DependencyNode, DependencyLink } from '../types';
 
 interface Props {
@@ -52,9 +53,10 @@ export const DependencyGraph = ({ data }: Props) => {
     node.append("circle")
       .attr("r", 12)
       .attr("fill", (d: any) => {
-        if (d.risk === 'High') return '#ef4444';
-        if (d.risk === 'Medium') return '#f59e0b';
-        if (d.risk === 'Low') return '#00E5FF';
+        const risk = (d.risk || '').toLowerCase();
+        if (risk === 'high' || risk === 'critical') return '#ef4444';
+        if (risk === 'medium') return '#f59e0b';
+        if (risk === 'low') return '#00E5FF';
         return '#22c55e';
       })
       .attr("stroke", "rgba(0,0,0,0.5)")
@@ -114,7 +116,19 @@ export const DependencyGraph = ({ data }: Props) => {
             </div>
          </div>
       </div>
-      <svg ref={svgRef} className="w-full h-[400px]" />
+      {data.nodes.length > 0 ? (
+        <svg ref={svgRef} className="w-full h-[400px]" />
+      ) : (
+        <div className="w-full h-[400px] flex items-center justify-center text-text-dim border-t border-white/5 bg-white/[0.01]">
+           <div className="flex flex-col items-center gap-4 text-center px-12 opacity-50">
+              <Activity className="w-8 h-8" />
+              <p className="max-w-[200px] uppercase text-[9px] font-black tracking-widest leading-loose">
+                Logical Trace Unavailable <br/> 
+                <span className="opacity-60 text-[8px]">The AI engine did not calculate node-level dependencies for this specific file structure.</span>
+              </p>
+           </div>
+        </div>
+      )}
     </div>
   );
 };

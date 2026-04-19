@@ -8,15 +8,15 @@ interface Props {
 
 export const FuzzingSimulation = ({ scenarios }: Props) => {
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="space-y-6 flex flex-col h-full">
+      <div className="grid grid-cols-1 gap-4">
         {scenarios.map((s, i) => (
           <motion.div 
             key={i}
             initial={{ opacity: 0, scale: 0.95 }}
             whileInView={{ opacity: 1, scale: 1 }}
             transition={{ delay: i * 0.1 }}
-            className="glass-card bg-linear-to-br from-white/[0.02] to-transparent p-6 group hover:border-cyber-purple/40 transition-all duration-500"
+            className="glass-card bg-linear-to-br from-white/[0.02] to-transparent p-6 group hover:border-cyber-purple/40 transition-all duration-500 flex flex-col justify-between h-full"
           >
             <div className="flex items-center justify-between mb-6">
                <div className="flex items-center gap-3">
@@ -30,14 +30,14 @@ export const FuzzingSimulation = ({ scenarios }: Props) => {
                </div>
             </div>
             
-            <p className="text-xs text-text-dim mb-6 leading-relaxed">
+            <p className="text-xs text-text-dim mb-6 leading-relaxed flex-1">
               {s.description}
             </p>
 
             <div className="space-y-4">
                <div className="p-4 bg-black/40 rounded-2xl border border-white/5 font-mono text-[11px] group-hover:border-cyber-purple/20 transition-all">
                   <p className="text-[9px] font-black text-cyber-blue uppercase mb-2">Injected Payload</p>
-                  <code className="text-blue-100/70">{s.attackInput}</code>
+                  <code className="text-blue-100/70 break-all whitespace-pre-wrap block">{s.attackInput}</code>
                </div>
                
                <div className="flex items-center justify-between px-2">

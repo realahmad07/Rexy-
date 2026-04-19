@@ -1,6 +1,22 @@
 # RexAudit: Neural Smart Contract Security Engine
 
-**RexAudit** (Codename: Rexy) is a high-fidelity, AI-powered security auditor designed for the next generation of smart contracts. By combining the reasoning capabilities of the Gemini 3.1 Neural Engine with advanced visualization techniques, RexAudit provides developers with an "X-ray" view of their code's security and efficiency.
+**RexAudit** (Codename: Rexy) is a high-fidelity, AI-powered security auditor designed for the next generation of smart contracts. By combining the reasoning capabilities of the **Gemini 2.0 Flash Neural Engine** with advanced visualization techniques, RexAudit provides developers with an "X-ray" view of their code's security and efficiency.
+
+---
+
+## 🛡️ Supported Auditor Ecosystems
+
+While RexAudit is language-agnostic at its core, it is specifically tuned for:
+
+1.  **Solidity (Ethereum, EVM L2s):**
+    *   Deep analysis of Hardhat/Foundry/Truffle structures.
+    *   Specialized checks for Reentrancy, Delegatecall exploits, and Gas Optimization.
+2.  **Rust / Anchor (Solana):**
+    *   Targeted detection of Account Ownership bugs and Signer Verification flaws.
+    *   Security analysis of Anchor macros and state machine transitions.
+3.  **JavaScript / TypeScript:**
+    *   Auditing of Web3 integration logic, deployment scripts, and backend protocols.
+    *   Detection of hardcoded secrets and logic flaws in automation bots.
 
 ---
 
@@ -26,7 +42,7 @@
 
 ## 🛠️ Technical Stack
 
-- **AI Core:** Google Gemini 3.1 Neural Engine (via `@google/genai`)
+- **AI Core:** Google Gemini 2.0 Flash (via `@google/genai`)
 - **Frontend Framework:** React 18 & Vite
 - **Styling:** Tailwind CSS (Cyber-Brutalist/Saas Aesthetic)
 - **Animations:** Framer Motion (motion/react)
