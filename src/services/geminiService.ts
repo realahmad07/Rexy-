@@ -27,8 +27,9 @@ function getAI() {
 }
 
 const MODELS = [
-  "gemini-3.1-flash-lite-preview", // High throughput workhorse (Hackathon Priority)
-  "gemini-2.0-flash",
+  "gemini-2.0-flash", // Most balanced
+  "gemini-1.5-flash", // Heaviest quota limits for free tier
+  "gemini-3.1-flash-lite-preview",
   "gemini-3-flash-preview"
 ];
 
@@ -37,7 +38,7 @@ export interface ContractFile {
   content: string;
 }
 
-async function fetchWithRetry<T>(fn: () => Promise<T>, maxRetries = 2, initialDelay = 500): Promise<T> {
+async function fetchWithRetry<T>(fn: () => Promise<T>, maxRetries = 3, initialDelay = 2000): Promise<T> {
   let lastError: any;
   for (let i = 0; i < maxRetries; i++) {
     try {
