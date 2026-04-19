@@ -27,8 +27,8 @@ function getAI() {
 }
 
 const MODELS = [
-  "gemini-2.0-flash", // Most balanced
-  "gemini-1.5-flash", // Heaviest quota limits for free tier
+  "gemini-1.5-flash", // Highest RPM for Free Tier (15 RPM)
+  "gemini-2.0-flash", 
   "gemini-3.1-flash-lite-preview",
   "gemini-3-flash-preview"
 ];
@@ -66,12 +66,20 @@ async function fetchWithRetry<T>(fn: () => Promise<T>, maxRetries = 3, initialDe
 
 export async function auditSmartContract(files: ContractFile[] | string): Promise<ContractAudit | null> {
   const codeContent = typeof files === 'string' ? files : files.map(f => `// File: ${f.name}\n${f.content}`).join('\n\n');
+  
+  // OPTIMIZATION: Minify code to save tokens and avoid TPM (Tokens Per Minute) quota limits
+  const minifiedCode = codeContent
+    .replace(/\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm, '$1') // Remove comments
+    .replace(/^[ \t]+|[ \t]+$/gm, '') // Remove leading/trailing whitespace
+    .replace(/^\s*[\r\n]/gm, '') // Remove empty lines
+    .trim();
+
   const lineCount = codeContent.split('\n').length;
   const fileCount = typeof files === 'string' ? 1 : files.length;
   
   const prompt = `You are a Lead Smart Contract Security Architect. Perform an enterprise-grade audit on the following code:
   
-  "${codeContent}"
+  "${minifiedCode}"
   
   AUDIT REQUIREMENTS:
   1. Detect Language & Framework: Identify if this is Solidity, Rust (Anchor), or JavaScript.
@@ -258,83 +266,10 @@ export async function auditSmartContract(files: ContractFile[] | string): Promis
   }
 
   if (lastError?.message?.toLowerCase().includes('429') || lastError?.status === 'RESOURCE_EXHAUSTED' || lastError?.code === 429) {
-    console.warn("Gemini Quota Exhausted. Switching to High-Fidelity Heuristic Fallback.");
-    
-    // Generate a professional-looking fallback audit report
-    const fileName = typeof files === 'string' ? 'contract' : (files[0]?.name || 'contract');
-    
-    return {
-      name: "Rexy Heuristic Scan",
-      language: "Detected",
-      framework: "Web3 Standard",
-      securityScore: 78,
-      riskLevel: "Medium",
-      summary: "Neural Response Limit reached. Rexy has automatically shifted to Heuristic Scaffolding. This report utilizes pattern-matching logic to identify critical risks based on standard Solidity vulnerability vectors.",
-      financialRiskSummary: "High sensitivity on state mappers and transfer logic. Potential reentrancy nodes identified.",
-      logicRiskSummary: "Logical flow mapping indicates standard CEI (Check-Effects-Interactions) patterns may be bypassed.",
-      vulnerabilities: [
-        {
-          title: "Potential Reentrancy Node",
-          severity: "High",
-          confidence: 85,
-          fileName: fileName,
-          lineNumbers: [15, 22],
-          description: "An external call is performed before internal balance decrement or state updates.",
-          impact: "Unauthorized fund drainage via recursive callback.",
-          remediation: "Apply the nonReentrant modifier and move state changes BEFORE external calls.",
-          exploitPoC: "Recursive fallback contract",
-          codeSnippet: "msg.sender.call{value: amount}('');"
-        },
-        {
-          title: "Access Control Sensitivity",
-          severity: "Critical",
-          confidence: 90,
-          fileName: fileName,
-          lineNumbers: [5],
-          description: "Governance functions lack Ownership or Role-Based guards.",
-          impact: "Complete administrative takeover.",
-          remediation: "Implement Ownable or AccessControl from the OpenZeppelin suite.",
-          exploitPoC: "Unauthenticated call to admin setter",
-          codeSnippet: "function setRoot(address _new) public {"
-        }
-      ],
-      safeCodeSnippet: "// [HEURISTIC PATCH GENERATED]\n// Pattern-based security fix applied.\npragma solidity ^0.8.0;\nimport '@openzeppelin/contracts/security/ReentrancyGuard.sol';\n\ncontract FixedModule is ReentrancyGuard {\n  mapping(address => uint256) public userBalances;\n  function safeWithdraw(uint256 amount) public nonReentrant {\n    require(userBalances[msg.sender] >= amount, 'Insuf');\n    userBalances[msg.sender] -= amount;\n    payable(msg.sender).transfer(amount);\n  }\n}",
-      dependencyGraph: { 
-        nodes: [
-          { id: "User", type: "interface", risk: "high" },
-          { id: fileName, type: "contract", risk: "high" },
-          { id: "Storage", type: "storage", risk: "low" }
-        ], 
-        links: [
-          { source: "User", target: fileName, relation: "calls" },
-          { source: fileName, target: "Storage", relation: "modifies" }
-        ] 
-      },
-      fuzzingSimulation: [
-        { name: "Oracle Probe", description: "Flashloan price spike simulation.", attackInput: "0xFF... -> $1B loan", outcome: "Alert", gasUsed: 350000, vulnerabilityTargeted: "Oracle" },
-        { name: "Access Fuzz", description: "Probing root setters.", attackInput: "setRoot(this)", outcome: "Blocked", gasUsed: 21000, vulnerabilityTargeted: "Access" }
-      ],
-      threatMonitoringData: [
-        { timestamp: new Date().toISOString(), event: "Heuristic scan triggered fallback", severity: "Medium" }
-      ],
-      logicFlow: [
-        { from: "Entry", to: "Logic", action: "Execute", isRisky: true, description: "External interaction" }
-      ],
-      finalVerdict: "Patches Needed",
-      architectureReview: "Architecture is structurally standard but requires specific defensive guards on state-transitions.",
-      gasEfficiencyScore: 70,
-      gasOptimizations: ["Consider using external instead of public for gas savings."],
-      heatmapData: [
-        { line: 5, risk: "high", score: 95 },
-        { line: 15, risk: "medium", score: 50 }
-      ],
-      totalLines: lineCount,
-      fileCount: fileCount
-    };
+    throw new Error("QUOTA_LIMIT: You have exceeded the Gemini Free Tier limit. The AI needs a 60-second break. Please wait and try again, or use a smaller code snippet.");
   }
 
-  console.error("Critical Analysis Failure:", lastError);
-  return null;
+  throw lastError || new Error("AI analysis failed. Please check your connection and try again.");
 }
 
 /**

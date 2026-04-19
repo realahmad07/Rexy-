@@ -110,14 +110,20 @@ export default function App() {
       await new Promise(r => setTimeout(r, phase.duration));
     }
 
-    const result = await auditSmartContract(targetFiles);
+    try {
+      const result = await auditSmartContract(targetFiles);
 
-    if (result) {
-      setAudit(result);
-      setAnalysisProgress(100);
-      setTimeout(() => setStage('report'), 500);
-    } else {
-      setError("AI Engine analysis failed. This is usually due to temporary quota limits.");
+      if (result) {
+        setAudit(result);
+        setAnalysisProgress(100);
+        setTimeout(() => setStage('report'), 500);
+      } else {
+        setError("AI Engine analysis returned an empty result. Please try again with a different code snippet.");
+        setStage('input');
+      }
+    } catch (err: any) {
+      console.error("Audit Failed:", err);
+      setError(err.message || "An unexpected error occurred during the neural scan.");
       setStage('input');
     }
     setLoading(false);
